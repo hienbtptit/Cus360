@@ -53,9 +53,8 @@ if __name__ == "__main__":
     p13 = multiprocessing.Process(target=crawlDataFirstTime, args=(2256, 2444))
     p14 = multiprocessing.Process(target=crawlDataFirstTime, args=(2444, 2620))
 
-    # starting process 1
+    # starting process
     p1.start()
-    # starting process 2
     p2.start()
     p3.start()
     p4.start()
@@ -70,11 +69,23 @@ if __name__ == "__main__":
     p13.start()
     p14.start()
 
-
-    # wait until process 1 is finished
+    #wait till process finish
     p1.join()
-    # wait until process 2 is finished
     p2.join()
+    p1.join()
+    p2.join()
+    p3.join()
+    p4.join()
+    p5.join()
+    p6.join()
+    p7.join()
+    p8.join()
+    p9.join()
+    p10.join()
+    p11.join()
+    p12.join()
+    p13.join()
+    p14.join()
 
     # both processes finished
     print("Done!")

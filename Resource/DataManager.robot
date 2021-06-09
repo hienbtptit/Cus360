@@ -2,6 +2,7 @@
 Library    ../CustomLibs/Csv.py
 Library    OperatingSystem
 Library    DateTime
+
 *** Keywords ***
 Get csv data
     [Arguments]    ${file_path}
@@ -13,9 +14,13 @@ Generate file path
     ${now}    Get Time    epoch
     ${CurrentDate}    Get Current Date    result_format=%d-%m-%Y
     Log    ${CurrentDate}
-    ${file_path}    Join Path    ${OUTPUT DIR}    ${website}_${CurrentDate}_${now}.csv
+    #${file_path}    Join Path    ${OUTPUT DIR}    ${website}_${CurrentDate}_${now}.csv
+    ${file_path}    Join Path    ${OUTPUT DIR}    ${website}_${CurrentDate}.csv
     [Return]    ${file_path}
 
 Write data to file
-    [Arguments]    ${file_path}    ${text1}    ${text2}    ${text3}    ${text4}    ${text5}
-    write_csv_file_2   ${file_path}    ${text1}    ${text2}    ${text3}    ${text4}    ${text5}
+    [Arguments]    ${file_path}    ${prid}    ${title}    ${des}    ${phone}    ${time}
+    #write_csv_file_2   ${file_path}    ${prid}    ${title}    ${des}    ${phone}    ${time}
+    write_to_csv_using_pandas    ${file_path}    ${prid}    ${title}    ${des}    ${phone}    ${time}
+
+

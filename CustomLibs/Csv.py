@@ -1,5 +1,6 @@
 import csv
 import xlsxwriter
+import pandas
 def read_csv_file(file_name):
     data = []
     with open(file_name,  "rt", encoding="utf8") as csvfile:
@@ -60,4 +61,16 @@ def write_excel_file(row, text1, text2, text3):
     #worksheet.insert_image('B5', 'logo.png')
 
     workbook.close()
+def write_to_csv_using_pandas(file_name, text1, text2, text3, text4, text5):
+    data=[]
+    d={}
+    d['prid'] = text1
+    d['title'] = text2
+    d['des'] = text3
+    d['phone'] = text4
+    d['time'] = text5
+    data.append(d)
+    df= pandas.DataFrame(data)
+    df.to_csv(file_name, mode="a", header=False, index=False, na_rep="NaN",quoting=csv.QUOTE_ALL)
+
 

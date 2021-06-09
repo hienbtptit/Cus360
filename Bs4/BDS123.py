@@ -50,7 +50,7 @@ def crawlDataFirstTime(start, end):
 if __name__ == '__main__':
 
     ### Multiprocessing with Process
-    processes=[Process(target=crawlDataFirstTime,args=(i,i+2)) for i in range(1, 2633, 187)]
+    processes=[Process(target=crawlDataFirstTime,args=(i,i+187)) for i in range(1, 2633, 187)]
     # Run processes
     for p in processes:p.start()
 

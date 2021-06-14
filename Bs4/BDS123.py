@@ -5,6 +5,7 @@ import os
 import multiprocessing
 import pandas
 import re
+import test_leveldb
 
 from datetime import datetime
 from bs4 import BeautifulSoup
@@ -22,7 +23,7 @@ def crawlDataFirstTime(start, end):
     now = datetime.now()
     current_time = now.strftime("%H:%M:%S")
     print("Start"+current_time);
-    file_path = os.getcwd()+"\\"+"bds1234.csv"
+    file_path = os.getcwd()+"\\"+"bds123.csv"
 
     for i in range(start, end):
         try:
@@ -37,7 +38,10 @@ def crawlDataFirstTime(start, end):
                 d = {}
                 try:
                     href = link['href']
-                    request = requests.get(baseUrl+href)
+                    if test_leveldb.check_exist(baseUrl+href) == 1: continue
+                    else:
+                        test_leveldb.insert_link(baseUrl+href)
+                        request = requests.get(baseUrl+href)
                 except:
                     print("Url Error: ")
                     print(baseUrl + href)
@@ -55,14 +59,14 @@ def crawlDataFirstTime(start, end):
                     print("Get atribute value error")
                     continue
     df= pandas.DataFrame(l)
-    df.to_csv("bds123.csv", mode="a", header=False, index=False, na_rep="NaN",quoting=csv.QUOTE_ALL)
+    df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN",quoting=csv.QUOTE_ALL)
 
 if __name__ == '__main__':
     final = getFinalPage('https://bds123.vn/nha-dat-ban-ho-chi-minh.html')
-    numProcess = 13
-    #print("Final page: "+str(final)+" / " + str(final/numProcess))
+    numProcess = 13 # run 13 process
+    print("Final page: "+str(final)+" / " + str(final/numProcess))
     ### Multiprocessing with Process
-    processes=[Process(target=crawlDataFirstTime,args=(i,i+int(final/numProcess))) for i in range(1, final, int(final/numProcess))]
+    processes=[Process(target=crawlDataFirstTime,args=(i,i+int(final/numProcess))) for i in range(1, final, int(final/numProcess))] #init numProcess process
     # Run processes
     for p in processes:p.start()
     # Exit the completed processes

@@ -14,8 +14,8 @@ Generate file path
     ${now}    Get Time    epoch
     ${CurrentDate}    Get Current Date    result_format=%d-%m-%Y
     Log    ${CurrentDate}
-    #${file_path}    Join Path    ${OUTPUT DIR}    ${website}_${CurrentDate}_${now}.csv
-    ${file_path}    Join Path    ${OUTPUT DIR}    ${website}_${CurrentDate}.csv
+    ${file_path}    Join Path    ${OUTPUT DIR}    ${website}_${CurrentDate}_${now}.csv
+    #${file_path}    Join Path    ${OUTPUT DIR}    ${website}_${CurrentDate}.csv
     [Return]    ${file_path}
 
 Write data to file

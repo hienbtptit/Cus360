@@ -5,6 +5,7 @@ import os
 import multiprocessing
 import pandas
 import re
+import time
 import test_leveldb
 
 from datetime import datetime
@@ -14,8 +15,8 @@ def getFinalPage(url):
     soup = BeautifulSoup(r.content, 'html5lib')
     final_page = re.split("=", soup.find_all('a', class_='page-link')[-1]['href'])[-1]
     return int(final_page)
+
 def crawlDataFirstTime(start, end):
-    l = []
     baseUrl = "https://bds123.vn"
     url = "https://bds123.vn/nha-dat-ban-ho-chi-minh.html"
     if(end >= getFinalPage(url)): end = getFinalPage(url) + 1
@@ -26,11 +27,12 @@ def crawlDataFirstTime(start, end):
     file_path = os.getcwd()+"\\"+"bds123.csv"
 
     for i in range(start, end):
+        l = []
         try:
             r = requests.get(url+'?page='+str(i))
             soup = BeautifulSoup(r.content, 'html5lib')
         except:
-            print("Url Error: ")
+            print("Page Url Error: ")
             print(url + '?page=' + str(i))
             continue
         list_link = soup.find_all('a', class_='link')
@@ -38,14 +40,15 @@ def crawlDataFirstTime(start, end):
                 d = {}
                 try:
                     href = link['href']
-                    if test_leveldb.check_exist(baseUrl+href) == 1: continue
-                    else:
-                        test_leveldb.insert_link(baseUrl+href)
-                        request = requests.get(baseUrl+href)
+                  #  print(baseUrl + href)
+                    request = requests.get(baseUrl + href)
                 except:
-                    print("Url Error: ")
+                    print("Post Url Error: ")
                     print(baseUrl + href)
                     continue
+                if test_leveldb.check_exist(baseUrl+href) == 1: continue
+                else:
+                    test_leveldb.insert_link(baseUrl+href)
                 try:
                     soup = BeautifulSoup(request.content, 'html5lib')
                     d['prid'] = soup.find('section', class_='section-post-detail')['data-id']
@@ -54,19 +57,20 @@ def crawlDataFirstTime(start, end):
                     d['phone'] = soup.find('button', class_='author-phone').text
                     time = soup.find('div', class_='item published')
                     d['time'] = time.findChild('span')['title']
-                    l.append(d)
                 except:
                     print("Get atribute value error")
                     continue
-    df= pandas.DataFrame(l)
-    df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN",quoting=csv.QUOTE_ALL)
+                l.append(d)
+        df= pandas.DataFrame(l)
+        df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN",quoting=csv.QUOTE_ALL)
 
 if __name__ == '__main__':
     final = getFinalPage('https://bds123.vn/nha-dat-ban-ho-chi-minh.html')
     numProcess = 13 # run 13 process
-    print("Final page: "+str(final)+" / " + str(final/numProcess))
+    #print("Final page: "+str(final)+" / " + str(final/numProcess))
     ### Multiprocessing with Process
     processes=[Process(target=crawlDataFirstTime,args=(i,i+int(final/numProcess))) for i in range(1, final, int(final/numProcess))] #init numProcess process
+
     # Run processes
     for p in processes:p.start()
     # Exit the completed processes

@@ -1,4 +1,5 @@
 from multiprocessing import Process
+from threading import Thread
 import requests
 import csv
 import os
@@ -7,6 +8,7 @@ import pandas
 import re
 import time
 import test_leveldb
+
 
 from datetime import datetime
 from bs4 import BeautifulSoup
@@ -24,7 +26,7 @@ def crawlDataFirstTime(start, end):
     now = datetime.now()
     current_time = now.strftime("%H:%M:%S")
     print("Start"+current_time);
-    file_path = os.getcwd()+"\\"+"bds123.csv"
+    file_path = os.getcwd()+"\\"+"bds1231.csv"
 
     for i in range(start, end):
         l = []
@@ -69,10 +71,14 @@ if __name__ == '__main__':
     numProcess = 13 # run 13 process
     #print("Final page: "+str(final)+" / " + str(final/numProcess))
     ### Multiprocessing with Process
-    processes=[Process(target=crawlDataFirstTime,args=(i,i+int(final/numProcess))) for i in range(1, final, int(final/numProcess))] #init numProcess process
+    #processes=[Process(target=crawlDataFirstTime,args=(i,i+int(final/numProcess))) for i in range(1, final, int(final/numProcess))] #init numProcess process
 
+    #multithreading
+    threads=[Thread(target=crawlDataFirstTime,args=(i,i+int(final/numProcess))) for i in range(1, final, int(final/numProcess))]
     # Run processes
-    for p in processes:p.start()
+    #for p in processes:p.start()
+    for thread in threads: thread.start()
     # Exit the completed processes
-    for p in processes:p.join()
+    #for p in processes:p.join()
+    for thread in threads: thread.join()
 

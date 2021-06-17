@@ -9,6 +9,7 @@ import datetime
 import sys
 sys.path.append('../')
 from CustomLibs import single_thread_leveldb
+from CustomLibs import test_leveldb
 
 baseUrl = "https://bds123.vn"
 url = "https://bds123.vn/nha-dat-ban-ho-chi-minh.html"
@@ -38,6 +39,10 @@ def crawlDataFirstTime(start, end):
         for  link in  list_link:
                 d = {}
                 href = link['href']
+                if test_leveldb.check_exist(baseUrl + href) == 1:
+                    continue
+                else:
+                    test_leveldb.insert_link(baseUrl + href)
                 try:
                     request = requests.get(baseUrl + href)
                 except:

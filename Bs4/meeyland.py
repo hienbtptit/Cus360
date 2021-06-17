@@ -1,45 +1,159 @@
-
-import lxml
+import multiprocessing
+from multiprocessing import Process
+from threading import Thread
 import requests
 import csv
 import os
-from datetime import datetime
+import pandas
+import re
+import datetime
 from bs4 import BeautifulSoup
+def getFinalPage(url):
+    request = requests.get(url)
+    soup = BeautifulSoup(request.content, 'html5lib')
+    num_post = soup.find('span', class_='blue').text
+    num_post = num_post.replace(",", "")
+    num_post_each_page = 24
+    #print('Number post: ' + num_post + "/ Number page: " + str(int(num_post) / num_post_each_page));
+    return int(int(num_post) / num_post_each_page)
 
-baseUrl = "https://meeyland.com"
-url = "https://meeyland.com/mua-ban-nha-dat/ho-chi-minh"
-#https://meeyland.com/mua-ban-nha-dat/ho-chi-minh/page-31785
-now = datetime.now()
-current_time = now.strftime("%H:%M:%S")
-print("start Time =", current_time)
-file_path = os.getcwd()+"\\"+"meeyland.csv"
-for i  in range  (1,10):
-    print("link:")
-    print(url+'/page-'+str(i))
-    r = requests.get(url+'/page-'+str(i))
-    soup = BeautifulSoup(r.content, 'html5lib')
-    list_link = soup.find_all('div', class_='col-sm-6 col-md-4')
-    for link in list_link:
-        href = link.findChild('a')['href']
-        request = requests.get(baseUrl + href)
-        print(baseUrl + href)
-        soup = BeautifulSoup(request.content, 'html5lib')
-        # print(soup.prettify())
-        prid = soup.find('div', id='nav-tabContent')['data-id']
-        print(id)
-        title = soup.find('h1', id='nav-home').text
-        # print(title)
-        des = soup.find('div', class_='des-detail').text
-        # print(des)
-        phone = soup.find('div', class_='phone')['data-phone']
-        # print(phone)
-        time = soup.find('div', text='Ngày đăng')
-        # print(time)
-        with open(file_path, mode='a', encoding="utf8") as csv_file:
-            csvfile_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            csvfile_writer.writerow([prid, title, des, phone, time])
-            csv_file.close()
+def crawlDataFirstTime(start, end):
+    baseUrl = "https://meeyland.com"#/mua-ban-nha-dat/giay-to-day-du-ban-can-ho-gia-de-cu-chi-2-05-ty-ngay-tren-quan-9-ho-chi-minh-dt-la-65-m2-1603716314861
+    url = "https://meeyland.com/mua-ban-nha-dat/ho-chi-minh"
+    now = datetime.datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+    print("start Time =", current_time)
+    print("start " + str(start) + "end "+str(end))
+    file_path = os.getcwd()+"\\"+"meeyland17062021.csv"
+    final = getFinalPage('https://meeyland.com/mua-ban-nha-dat/ho-chi-minh')
+    if end >= final :  end = final+1
+    for i  in range  (start,end):
+        l = []
+        try:
+            r = requests.get(url+'/page-'+str(i))
+        except:
+            print("URL page error: "+url+'/page-'+str(i))
+            continue
+        soup = BeautifulSoup(r.content, 'html5lib')
+        list_link = soup.find_all('div', class_='col-sm-6 col-md-4')
+        for link in list_link:
+            d={}
+            href = link.findChild('a')['href']
+            if(re.search(baseUrl, href)):
+                continue
+            else:
+                try:
+                    request = requests.get(baseUrl + href)
+                except:
+                    print("URL error: "+baseUrl + href)
+                    continue
+            soup = BeautifulSoup(request.content, 'html5lib')
+            # print(soup.prettify())
+            try:
+                d['prid'] = soup.find('div', id='nav-tabContent')['data-id']
+                #print("prid: "+d['prid'])
+                d['title'] = soup.find('h1', id='nav-home').text
+                #print("title: "+d['title'])
+                d['des'] = soup.find('div', class_='des-detail').text
+                #print("des: "+d['des'])
+                d['phone'] = soup.find('div', class_='phone')['data-phone']
+                #print("phone: "+d['phone'])
+                d['time'] = soup.find('div', text=re.compile('^Ngày đăng')).text
+                #print("time: "+d['time'])
+            except:
+                print(str(i)+ ": "+href)
+                print("Get atribute value error")
+                continue
+            dayPost = re.split("\s", d['time'])[-1]
+            dayPost = re.split("/", dayPost)
+            d['time'] = datetime.datetime(int(dayPost[2]), int(dayPost[1]), int(dayPost[0]))
+
+            l.append(d)
+        df= pandas.DataFrame(l)
+        df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN",quoting=csv.QUOTE_ALL)
+
+def crawlBySchedule(year, month, day): #crawl data after day : day-month-year
+    baseUrl = "https://meeyland.com"#/mua-ban-nha-dat/giay-to-day-du-ban-can-ho-gia-de-cu-chi-2-05-ty-ngay-tren-quan-9-ho-chi-minh-dt-la-65-m2-1603716314861
+    url = "https://meeyland.com/mua-ban-nha-dat/ho-chi-minh"
+    stop = 0 # stop while loop when stop = 1
+    page = 1
+    file_path = os.getcwd() + "\\" + "meeyland-"+str(year)+str(month)+str(day)+".csv"
+    now = datetime.datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+    print("start Time =", current_time)
+
+    #now = re.split("\s",str(datetime.datetime.now()))[0]
+    #now = re.split("-",date)
+    #now = datetime.datetime(int(now[0]), int(now[1]), int(now[2]))
+    now = datetime.datetime(year,month,day)
+    while stop != 1000:
+        l = []
+        try:
+            r = requests.get(url + '?created=desc&page=' + str(page))
+            soup = BeautifulSoup(r.content, 'html5lib')
+        except:
+            print("Page Url Error: ")
+            print(url + '?page=' + str(page))
+            continue
+        list_link = soup.find_all('div', class_='col-sm-6 col-md-4')
+        for link in list_link:
+            d = {}
+            href = link.findChild('a')['href']
+            if (re.search(baseUrl, href)):
+                continue
+            else:
+                try:
+                    request = requests.get(baseUrl + href)
+                except:
+                    print("URL error: " + baseUrl + href)
+                    continue
+            soup = BeautifulSoup(request.content, 'html5lib')
+            ''' if test_leveldb.check_exist(baseUrl+href) == 1: continue
+            else:
+                test_leveldb.insert_link(baseUrl+href)'''
+            try:
+                d['prid'] = soup.find('div', id='nav-tabContent')['data-id']
+                print("prid: "+d['prid'])
+                d['title'] = soup.find('h1', id='nav-home').text
+                print("title: "+d['title'])
+                d['des'] = soup.find('div', class_='des-detail').text
+                print("des: "+d['des'])
+                d['phone'] = soup.find('div', class_='phone')['data-phone']
+                print("phone: "+d['phone'])
+                d['time'] = soup.find('div', text=re.compile('^Ngày đăng')).text
+                print("time: "+d['time'])
+            except:
+                print(str(page) + ": " + href)
+                print("Get atribute value error")
+                continue
+            dayPost = re.split("\s", d['time'])[-1]
+            dayPost = re.split("/", dayPost)
+            d['time'] = datetime.datetime(int(dayPost[2]), int(dayPost[1]), int(dayPost[0]))
+            #check if timepost < date then break the loop
+            if (d['time']  < now) :
+                stop = stop+1
+                print(stop)
+                if stop == 1000 :  break
+                else: continue
+            l.append(d)
+        df = pandas.DataFrame(l)
+        df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)
+        page = page + 1
 
 
+if __name__ == '__main__':
+    final = getFinalPage('https://meeyland.com/mua-ban-nha-dat/ho-chi-minh')
+    print("total page: "+str(final))
+    numProcess = multiprocessing.cpu_count()*2 - 4 # run 13 process
+    #print("Final page: "+str(final)+" / " + str(final/numProcess))
+    ### Multiprocessing with Process
+    processes=[Process(target=crawlDataFirstTime,args=(i,i+int(final/numProcess))) for i in range(1, final, int(final/numProcess))] #init numProcess process
+
+    # Run processes
+    for p in processes:p.start()
+
+    # Exit the completed processes
+    for p in processes:p.join()
+    #crawlBySchedule(2021, 6, 16)
 
 

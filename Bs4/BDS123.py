@@ -21,9 +21,6 @@ def getFinalPage(urlPara):
 def crawlDataFirstTime(start, end):
     if(end >= getFinalPage(url)): end = getFinalPage(url) + 1
     print("run from " + str(start) + " to " + str(end))
-    now = datetime.now()
-    current_time = now.strftime("%H:%M:%S")
-    print("Start"+current_time);
     file_path = os.getcwd()+"\\"+"bds123.csv"
 
     for i in range(start, end):
@@ -59,6 +56,12 @@ def crawlDataFirstTime(start, end):
                 except:
                     print("Get atribute value error")
                     continue
+                #format time
+                dayPost = re.split("\s", d['time'])[-1]
+                dayPost = re.split("/", dayPost)
+                timePost = re.split("\s", d['time'])[-2]
+                timePost = re.split(":", timePost)
+                d['time'] = datetime.datetime(int(dayPost[2]), int(dayPost[1]), int(dayPost[0]), int(timePost[0]),int(timePost[1]))
                 l.append(d)
         df= pandas.DataFrame(l)
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN",quoting=csv.QUOTE_ALL)
@@ -101,16 +104,18 @@ def crawlBySchedule(year, month, day): #crawl data after day : day-month-year
                 d['phone'] = soup.find('button', class_='author-phone').text
                 time = soup.find('div', class_='item published')
                 d['time'] = time.findChild('span')['title']
-                timePost = re.split("\s",d['time'])[-1]
-                timePost = re.split("/", timePost)
-                timePost = datetime.datetime(int(timePost[2]), int(timePost[1]), int(timePost[0]))
-                #check if timepost < date then break the loop
-                if (timePost < now) :
-                    stop = 1
-                    break
             except:
                 print("Get atribute value error")
                 continue
+            dayPost = re.split("\s",d['time'])[-1]
+            dayPost = re.split("/", dayPost)
+            timePost = re.split("\s", d['time'])[-2]
+            timePost = re.split(":", timePost)
+            d['time'] = datetime.datetime(int(dayPost[2]), int(dayPost[1]), int(dayPost[0]), int(timePost[0]), int(timePost[1]))
+            #check if timepost < date then break the loop
+            if (d['time']  < now) :
+                stop = 1
+                break
             l.append(d)
         df = pandas.DataFrame(l)
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)
@@ -118,9 +123,9 @@ def crawlBySchedule(year, month, day): #crawl data after day : day-month-year
 
 
 if __name__ == '__main__':
-    crawlBySchedule(2021,6,16)
-    '''final = getFinalPage('https://bds123.vn/nha-dat-ban-ho-chi-minh.html')
-    numProcess = multiprocessing.cpu_count()*2 - 4 # run 13 process
+    #crawlBySchedule(2021,6,16)
+    final = getFinalPage('https://bds123.vn/nha-dat-ban-ho-chi-minh.html')
+    numProcess = multiprocessing.cpu_count()*2 - 4 # run process
 
     print(numProcess)
     #print("Final page: "+str(final)+" / " + str(final/numProcess))
@@ -133,6 +138,6 @@ if __name__ == '__main__':
     # Run processes
     for p in processes:p.start()
     # Exit the completed processes
-    for p in processes:p.join()'''
+    for p in processes:p.join()
 
 

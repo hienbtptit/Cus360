@@ -2,12 +2,12 @@
 import levecmdldb
 import plyvel
 
-
-def insert_link(url=''):
-    db = plyvel.DB('/tmp/testdb/', create_if_missing=True)
-    key = url.encode()
-    value = 'exist'
-    y = db.put(key,value.encode())
+#
+# def insert_link(url=''):
+#     db = plyvel.DB('/tmp/testdb/', create_if_missing=True)
+#     key = url.encode()
+#     value = 'exist'
+#     y = db.put(key,value.encode())
 
 def insert_link(url='', thread_id=None):
     pathDB = '/tmp/leveldb/' + str(thread_id)

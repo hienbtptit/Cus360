@@ -1,5 +1,5 @@
 # from typing import BinaryIO
-import leveldb
+import levecmdldb
 import plyvel
 
 
@@ -9,6 +9,13 @@ def insert_link(url=''):
     value = 'exist'
     y = db.put(key,value.encode())
 
+def insert_link(url='', thread_id=None):
+    pathDB = '/tmp/leveldb/' + str(thread_id)
+    db = plyvel.DB(pathDB, create_if_missing=True)
+    key = url.encode()
+    value = 'exist'
+    y = db.put(key, value.encode())
+    db.close()
 
 def check_exist(url=''):
     # exist = 0  --> url is not exist

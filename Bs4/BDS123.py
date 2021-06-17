@@ -39,10 +39,7 @@ def crawlDataFirstTime(start, end):
         for  link in  list_link:
                 d = {}
                 href = link['href']
-                if test_leveldb.check_exist(baseUrl + href) == 1:
-                    continue
-                else:
-                    test_leveldb.insert_link(baseUrl + href)
+                test_leveldb.insert_link(baseUrl + href, start)
                 try:
                     request = requests.get(baseUrl + href)
                 except:

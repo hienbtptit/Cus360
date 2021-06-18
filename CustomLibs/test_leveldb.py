@@ -1,5 +1,5 @@
 # from typing import BinaryIO
-import levecmdldb
+import leveldb
 import plyvel
 
 #

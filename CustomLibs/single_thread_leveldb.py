@@ -21,7 +21,8 @@ def check_exist(url=''):
     # exist = 0  --> url is not exist
     # exist = 1  --> url is already existed
     exist = 0
-    latest_folders = get_latest_folder(path='/tmp/leveldb/*')
+    # latest_folders = get_latest_folder(path='/tmp/leveldb/*')
+    latest_folders = [d for d in glob.glob('/tmp/leveldb/*') if os.path.isdir(d)]
 
     for folder in latest_folders:
         # get path   of folder db

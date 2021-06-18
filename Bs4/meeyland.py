@@ -7,7 +7,11 @@ import os
 import pandas
 import re
 import datetime
+import sys
 from bs4 import BeautifulSoup
+sys.path.append('../')
+from CustomLibs import single_thread_leveldb
+from CustomLibs import test_leveldb
 def getFinalPage(url):
     request = requests.get(url)
     soup = BeautifulSoup(request.content, 'html5lib')
@@ -20,11 +24,11 @@ def getFinalPage(url):
 def crawlDataFirstTime(start, end):
     baseUrl = "https://meeyland.com"#/mua-ban-nha-dat/giay-to-day-du-ban-can-ho-gia-de-cu-chi-2-05-ty-ngay-tren-quan-9-ho-chi-minh-dt-la-65-m2-1603716314861
     url = "https://meeyland.com/mua-ban-nha-dat/ho-chi-minh"
-    now = datetime.datetime.now()
-    current_time = now.strftime("%H:%M:%S")
-    print("start Time =", current_time)
-    print("start " + str(start) + "end "+str(end))
-    file_path = os.getcwd()+"\\"+"meeyland17062021.csv"
+    # now = datetime.datetime.now()
+    # current_time = now.strftime("%H:%M:%S")
+    # print("start Time =", current_time)
+    # print("start " + str(start) + "end "+str(end))
+    file_path = os.getcwd()+"\\"+"meeyland.csv"
     final = getFinalPage('https://meeyland.com/mua-ban-nha-dat/ho-chi-minh')
     if end >= final :  end = final+1
     for i  in range  (start,end):
@@ -39,11 +43,13 @@ def crawlDataFirstTime(start, end):
         for link in list_link:
             d={}
             href = link.findChild('a')['href']
+
             if(re.search(baseUrl, href)):
                 continue
             else:
                 try:
                     request = requests.get(baseUrl + href)
+                    test_leveldb.insert_link(baseUrl + href, start)
                 except:
                     print("URL error: "+baseUrl + href)
                     continue
@@ -72,21 +78,22 @@ def crawlDataFirstTime(start, end):
         df= pandas.DataFrame(l)
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN",quoting=csv.QUOTE_ALL)
 
-def crawlBySchedule(year, month, day): #crawl data after day : day-month-year
+def crawlBySchedule(): #crawl data after day : day-month-year
     baseUrl = "https://meeyland.com"#/mua-ban-nha-dat/giay-to-day-du-ban-can-ho-gia-de-cu-chi-2-05-ty-ngay-tren-quan-9-ho-chi-minh-dt-la-65-m2-1603716314861
     url = "https://meeyland.com/mua-ban-nha-dat/ho-chi-minh"
     stop = 0 # stop while loop when stop = 1
     page = 1
-    file_path = os.getcwd() + "\\" + "meeyland-"+str(year)+str(month)+str(day)+".csv"
-    now = datetime.datetime.now()
-    current_time = now.strftime("%H:%M:%S")
-    print("start Time =", current_time)
+    now = re.split("\s",str(datetime.datetime.now()))[0]
+    now = re.split("-",now)
+
+    file_path = os.getcwd() + "\\" + "meeyland-" + now[0] + now[1] + now[1] + ".csv"
 
     #now = re.split("\s",str(datetime.datetime.now()))[0]
     #now = re.split("-",date)
     #now = datetime.datetime(int(now[0]), int(now[1]), int(now[2]))
-    now = datetime.datetime(year,month,day)
-    while stop != 1000:
+    #now = datetime.datetime(year,month,day)
+    iterator = 0
+    while stop != 0:
         l = []
         try:
             r = requests.get(url + '?created=desc&page=' + str(page))
@@ -108,9 +115,14 @@ def crawlBySchedule(year, month, day): #crawl data after day : day-month-year
                     print("URL error: " + baseUrl + href)
                     continue
             soup = BeautifulSoup(request.content, 'html5lib')
-            ''' if test_leveldb.check_exist(baseUrl+href) == 1: continue
+            if single_thread_leveldb.check_exist(baseUrl + href) == 1:
+                if iterator == 3 :
+                    stop = 1
+                    break
+                iterator = iterator+1
             else:
-                test_leveldb.insert_link(baseUrl+href)'''
+                iterator = 0
+                single_thread_leveldb.insert_link(baseUrl + href)
             try:
                 d['prid'] = soup.find('div', id='nav-tabContent')['data-id']
                 print("prid: "+d['prid'])
@@ -139,21 +151,39 @@ def crawlBySchedule(year, month, day): #crawl data after day : day-month-year
         df = pandas.DataFrame(l)
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)
         page = page + 1
+        if stop == 1:
+            break
 
 
-if __name__ == '__main__':
+
+keys = sys.argv[1::2]
+values = sys.argv[2::2]
+
+print(keys)
+print(values)
+
+args = {k: v for k, v in zip(keys, values)}
+print(args)
+
+first_time = args.get('--first-time')
+if first_time == '1':
+    print("crawlDataFirstTime")
     final = getFinalPage('https://meeyland.com/mua-ban-nha-dat/ho-chi-minh')
-    print("total page: "+str(final))
-    numProcess = multiprocessing.cpu_count()*2 - 4 # run 13 process
-    #print("Final page: "+str(final)+" / " + str(final/numProcess))
+    numProcess = multiprocessing.cpu_count() * 2 - 6  # run process
+
+    print(numProcess)
+    # print("Final page: "+str(final)+" / " + str(final/numProcess))
     ### Multiprocessing with Process
-    processes=[Process(target=crawlDataFirstTime,args=(i,i+int(final/numProcess))) for i in range(1, final, int(final/numProcess))] #init numProcess process
+    processes = [Process(target=crawlDataFirstTime, args=(i, i + int(final / numProcess))) for i in
+                 range(1, final, int(final / numProcess))]  # init numProcess process
+
+    # multithreading
+    # threads=[Thread(target=crawlDataFirstTime,args=(i,i+int(final/numProcess))) for i in range(1, final, int(final/numProcess))]
 
     # Run processes
-    for p in processes:p.start()
-
+    for p in processes: p.start()
     # Exit the completed processes
-    for p in processes:p.join()
-    #crawlBySchedule(2021, 6, 16)
-
-
+    for p in processes: p.join()
+else:
+    print("crawlBySchedule")
+    crawlBySchedule()

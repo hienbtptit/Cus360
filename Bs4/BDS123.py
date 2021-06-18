@@ -1,4 +1,5 @@
 from multiprocessing import Process
+
 import multiprocessing
 import requests
 import csv
@@ -25,7 +26,6 @@ def crawlDataFirstTime(start, end):
     if(end >= getFinalPage(url)): end = getFinalPage(url) + 1
     print("run from " + str(start) + " to " + str(end))
     file_path = os.getcwd()+"\\"+"bds123.csv"
-
     for i in range(start, end):
         l = []
         try:
@@ -160,7 +160,7 @@ args = {k: v for k, v in zip(keys, values)}
 print(args)
 
 first_time = args.get('--first-time')
-if first_time == 1 :
+if first_time == '1':
     print("crawlDataFirstTime")
     final = getFinalPage('https://bds123.vn/nha-dat-ban-ho-chi-minh.html')
     numProcess = multiprocessing.cpu_count() * 2 - 4  # run process

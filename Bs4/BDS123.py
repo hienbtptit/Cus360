@@ -1,5 +1,4 @@
 from multiprocessing import Process
-
 import multiprocessing
 import requests
 import csv
@@ -126,8 +125,6 @@ def crawlBySchedule(): #crawl data after day : day-month-year
         df = pandas.DataFrame(l)
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)
         page = page + 1
-        if stop == 1:
-            break
 
 
 '''if __name__ == '__main__':

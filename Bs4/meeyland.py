@@ -93,7 +93,7 @@ def crawlBySchedule(): #crawl data after day : day-month-year
     #now = datetime.datetime(int(now[0]), int(now[1]), int(now[2]))
     #now = datetime.datetime(year,month,day)
     iterator = 0
-    while stop != 0:
+    while stop == 0:
         l = []
         try:
             r = requests.get(url + '?created=desc&page=' + str(page))
@@ -151,8 +151,6 @@ def crawlBySchedule(): #crawl data after day : day-month-year
         df = pandas.DataFrame(l)
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)
         page = page + 1
-        if stop == 1:
-            break
 
 
 

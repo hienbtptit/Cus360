@@ -9,19 +9,20 @@ import plyvel
 #     value = 'exist'
 #     y = db.put(key,value.encode())
 
-def insert_link(url='', thread_id=None):
-    pathDB = '/tmp/leveldb/' + str(thread_id)
+def insert_link(url='', thread_id=None, path_database=None):
+    # pathDB = '/tmp/leveldb/' + str(thread_id)
+    pathDB = path_database + str(thread_id)
     db = plyvel.DB(pathDB, create_if_missing=True)
     key = url.encode()
     value = 'exist'
     y = db.put(key, value.encode())
     db.close()
 
-def check_exist(url=''):
+def check_exist(url='',path_database=None):
     # exist = 0  --> url is not exist
     # exist = 1  --> url is already existed 
     exist = 0
-    db = plyvel.DB('/tmp/testdb/', create_if_missing=True)
+    db = plyvel.DB(path_database, create_if_missing=True)
     key = url.encode()
     # check if key existed or not
     check_result = db.get(key)

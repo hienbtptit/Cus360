@@ -20,17 +20,16 @@ def getFinalPage(url):
     num_post_each_page = 24
     #print('Number post: ' + num_post + "/ Number page: " + str(int(num_post) / num_post_each_page));
     return int(int(num_post) / num_post_each_page)
-
+def writeFieldNameToFile(file):
+    field_name = []
+    field_name.append({'prid': 'prid', 'title': 'title', 'des': 'des', 'phone': 'phone', 'time': 'time'})
+    df = pandas.DataFrame(field_name)
+    df.to_csv(file, mode="a", header=False, index=False, na_rep="NaN",quoting=csv.QUOTE_ALL)
 def crawlDataFirstTime(start, end):
     baseUrl = "https://meeyland.com"#/mua-ban-nha-dat/giay-to-day-du-ban-can-ho-gia-de-cu-chi-2-05-ty-ngay-tren-quan-9-ho-chi-minh-dt-la-65-m2-1603716314861
     url = "https://meeyland.com/mua-ban-nha-dat/ho-chi-minh"
-    # now = datetime.datetime.now()
-    # current_time = now.strftime("%H:%M:%S")
-    # print("start Time =", current_time)
-    # print("start " + str(start) + "end "+str(end))
-    file_path = os.getcwd()+"/"+"meeyland.csv"
+    file_path = os.getcwd()+"\\"+"meeyland.csv"
     final = getFinalPage('https://meeyland.com/mua-ban-nha-dat/ho-chi-minh')
-    os.mkdir('/tmp/leveldb/meeyland/')
     if end >= final :  end = final+1
     for i  in range  (start,end):
         l = []
@@ -87,12 +86,8 @@ def crawlBySchedule(): #crawl data after day : day-month-year
     now = re.split("\s",str(datetime.datetime.now()))[0]
     now = re.split("-",now)
 
-    file_path = os.getcwd() + "/" + "meeyland-" + now[0] + now[1] + now[1] + ".csv"
-    os.mkdir('/tmp/leveldb/meeyland/')
-    #now = re.split("\s",str(datetime.datetime.now()))[0]
-    #now = re.split("-",date)
-    #now = datetime.datetime(int(now[0]), int(now[1]), int(now[2]))
-    #now = datetime.datetime(year,month,day)
+    file_path = os.getcwd() + "\\" + "meeyland-" + now[0] + now[1] + now[1] + ".csv"
+    writeFieldNameToFile(file_path)
     iterator = 0
     while stop == 0:
         l = []
@@ -143,16 +138,10 @@ def crawlBySchedule(): #crawl data after day : day-month-year
             dayPost = re.split("/", dayPost)
             d['time'] = datetime.datetime(int(dayPost[2]), int(dayPost[1]), int(dayPost[0]))
             #check if timepost < date then break the loop
-            if (d['time']  < now) :
-                stop = stop+1
-                print(stop)
-                if stop == 1000 :  break
-                else: continue
             l.append(d)
         df = pandas.DataFrame(l)
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)
         page = page + 1
-
 
 
 keys = sys.argv[1::2]
@@ -167,10 +156,9 @@ print(args)
 first_time = args.get('--first-time')
 if first_time == '1':
     print("crawlDataFirstTime")
+    writeFieldNameToFile(os.getcwd()+"\\"+"meeyland.csv")
     final = getFinalPage('https://meeyland.com/mua-ban-nha-dat/ho-chi-minh')
     numProcess = multiprocessing.cpu_count() * 2 - 6  # run process
-
-    print(numProcess)
     # print("Final page: "+str(final)+" / " + str(final/numProcess))
     ### Multiprocessing with Process
     processes = [Process(target=crawlDataFirstTime, args=(i, i + int(final / numProcess))) for i in

@@ -24,7 +24,8 @@ def getFinalPage(urlPara):
 def crawlDataFirstTime(start, end):
     if(end >= getFinalPage(url)): end = getFinalPage(url) + 1
     print("run from " + str(start) + " to " + str(end))
-    file_path = os.getcwd()+"\\"+"bds123.csv"
+    file_path = os.getcwd()+"/"+"bds123.csv"
+    os.mkdir('/tmp/leveldb/bds123/')
     for i in range(start, end):
         l = []
         try:
@@ -38,7 +39,7 @@ def crawlDataFirstTime(start, end):
         for  link in  list_link:
                 d = {}
                 href = link['href']
-                test_leveldb.insert_link(baseUrl + href, start)
+                test_leveldb.insert_link(baseUrl + href, start,'/tmp/leveldb/bds123/')
                 try:
                     request = requests.get(baseUrl + href)
                 except:
@@ -72,7 +73,8 @@ def crawlBySchedule(): #crawl data after day : day-month-year
     now = re.split("\s",str(datetime.datetime.now()))[0]
     now = re.split("-",now)
 
-    file_path = os.getcwd() + "\\" + "bds123-" + now[0] + now[1] + now[1] + ".csv"
+    file_path = os.getcwd() + "/" + "bds123-" + now[0] + now[1] + now[1] + ".csv"
+    os.mkdir('/tmp/leveldb/bds123/')
     print(file_path)
     iterator = 0
     while stop == 0:
@@ -88,14 +90,14 @@ def crawlBySchedule(): #crawl data after day : day-month-year
         for link in list_link:
             href = link['href']
             d = {}
-            if single_thread_leveldb.check_exist(baseUrl + href) == 1:
+            if single_thread_leveldb.check_exist(baseUrl + href,'/tmp/leveldb/bds123/') == 1:
                 if iterator == 3 :
                     stop = 1
                     break
                 iterator = iterator+1
             else:
                 iterator = 0
-                single_thread_leveldb.insert_link(baseUrl + href)
+                single_thread_leveldb.insert_link(baseUrl + href,'/tmp/leveldb/bds123/')
 
             try:
                 request = requests.get(baseUrl + href)

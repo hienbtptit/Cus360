@@ -3,13 +3,14 @@ import plyvel
 import os.path, time
 import datetime as dt
 import glob
-def insert_link(url=''):
+def insert_link(url='', path_database=None):
     
     # all_subdirs = [d for d in os.listdir('/tmp/leveldb') if os.path.isdir(d)]
 
     # create id for new folder db =  numbers of folders + 1
     today = dt.date.today()
-    pathDB = '/tmp/leveldb/' + today.strftime("%d-%m-%Y")
+    pathDB = path_database + today.strftime("%d-%m-%Y")
+    # pathDB = '/tmp/leveldb/' + today.strftime("%d-%m-%Y")
     # open file to insert
     db = plyvel.DB(pathDB, create_if_missing=True)
     key = url.encode()
@@ -17,12 +18,12 @@ def insert_link(url=''):
     y = db.put(key, value.encode())
     db.close()
 
-def check_exist(url=''):
+def check_exist(url='', path_database=None):
     # exist = 0  --> url is not exist
     # exist = 1  --> url is already existed
     exist = 0
     # latest_folders = get_latest_folder(path='/tmp/leveldb/*')
-    latest_folders = [d for d in glob.glob('/tmp/leveldb/*') if os.path.isdir(d)]
+    latest_folders = [d for d in glob.glob(path_database + '*') if os.path.isdir(d)]
 
     for folder in latest_folders:
         # get path   of folder db

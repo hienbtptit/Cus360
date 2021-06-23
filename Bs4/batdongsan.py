@@ -20,8 +20,8 @@ from selenium.webdriver.support import expected_conditions as EC
 
 baseUrl = "https://batdongsan.com.vn"
 URL = "https://batdongsan.com.vn/nha-dat-ban-tp-hcm"
-DRIVER_PATH = 'D:\\bin\\chromedriver.exe'
-
+#DRIVER_PATH = 'D:\\bin\\chromedriver.exe'
+DRIVER_PATH = '/usr/bin/chromedriver'
 def getFinalPage(url):
     driver = webdriver.Chrome(executable_path=DRIVER_PATH)
     driver.get(URL)
@@ -30,8 +30,9 @@ def getFinalPage(url):
     driver.quit()
     return int(final_page)
 def crawlDataFirstTime(start, end, final):
+    os.mkdir('/tmp/leveldb/batdongsan/')
     if(end >= final): end = final +1
-    file_path = os.getcwd() + "\\" + "batdongsan.csv"
+    file_path = os.getcwd() + "/" + "batdongsan.csv"
     driver = webdriver.Chrome(executable_path=DRIVER_PATH)
     for page in range(start, end):
         driver.get(URL + '/p' + str(page))
@@ -53,7 +54,7 @@ def crawlDataFirstTime(start, end, final):
             try:
                 driver.get(post_link)
                 driver.maximize_window()
-                test_leveldb.insert_link(post_link, start)
+                test_leveldb.insert_link(post_link, start,'/tmp/leveldb/batdongsan/')
             except:
                 continue
             try:
@@ -78,13 +79,13 @@ def crawlDataFirstTime(start, end, final):
     current_time = now.strftime("%H:%M:%S")
     print("end Time =", current_time)
 def crawlBySchedule(): #crawl data after day : day-month-year
-
+    os.mkdir('/tmp/leveldb/batdongsan/')
     driver = webdriver.Chrome(executable_path=DRIVER_PATH)
     stop = 0 # stop while loop when stop = 1
     page = 1
     now = re.split("\s",str(datetime.datetime.now()))[0]
     now = re.split("-",now)
-    file_path = os.getcwd() + "\\" + "batdongsan-" + now[0] + now[1] + now[1] + ".csv"
+    file_path = os.getcwd() + "/" + "batdongsan-" + now[0] + now[1] + now[1] + ".csv"
     iterator = 0
     while stop == 0:
         driver.get(URL + '/p' + str(page))
@@ -106,14 +107,14 @@ def crawlBySchedule(): #crawl data after day : day-month-year
             try:
                 driver.get(post_link)
                 driver.maximize_window()
-                if single_thread_leveldb.check_exist(post_link) == 1:
+                if single_thread_leveldb.check_exist(post_link,'/tmp/leveldb/batdongsan/') == 1:
                     if iterator == 3:
                         stop = 1
                         break
                     iterator = iterator + 1
                 else:
                     iterator = 0
-                    single_thread_leveldb.insert_link(post_link)
+                    single_thread_leveldb.insert_link(post_link,'/tmp/leveldb/batdongsan/')
             except:
                 continue
             try:

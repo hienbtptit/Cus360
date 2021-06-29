@@ -5,6 +5,7 @@ import re
 import pandas
 import os
 import csv
+import multiprocessing
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -63,7 +64,7 @@ def crawlDataFirstTime(start, end):
                 driver.get(link['href'])
             except:
                 print("Post link error")
-            test_leveldb.insert_link(link['href'], start, '/tmp/leveldb/batdongsan/')
+            test_leveldb.insert_link(link['href'], start, '/tmp/leveldb/chotot/')
             soup = BeautifulSoup(driver.page_source, 'html5lib')
             try:
                 d={}
@@ -160,7 +161,7 @@ if first_time == '1':
     writeFieldNameToFile(os.getcwd() + "/" + "chotot.csv")
     print("crawlDataFirstTime")
     final = 3889
-    numProcess = 1
+    numProcess = multiprocessing.cpu_count()  # run process
     ### Multiprocessing with Process
     processes = [Process(target=crawlDataFirstTime, args=(i, i + int(final / numProcess))) for i in
                  range(1, final, int(final / numProcess))]  # init numProcess process

@@ -32,7 +32,7 @@ def crawlDataFirstTime(start, end):
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--incognito')
     options.add_argument('--headless')
-    driver = webdriver.Chrome(executable_path=DRIVER_PATH, chrome_options=options)
+    driver = webdriver.Chrome(executable_path=DRIVER_PATH, options=options)
     for page in range(start, end):
         try:
             driver.get(Url + '?page=' + str(page))
@@ -96,7 +96,7 @@ def crawlBySchedule():
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--incognito')
     options.add_argument('--headless')
-    driver = webdriver.Chrome(executable_path=DRIVER_PATH, chrome_options=options)
+    driver = webdriver.Chrome(executable_path=DRIVER_PATH, options=options)
     iterator = 0
     while stop == 0:
         try:

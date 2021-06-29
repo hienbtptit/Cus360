@@ -16,7 +16,7 @@ from CustomLibs import test_leveldb
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
+from pathlib import Path
 
 baseUrl = "https://batdongsan.com.vn"
 URL = "https://batdongsan.com.vn/nha-dat-ban-tp-hcm"
@@ -30,9 +30,14 @@ def getFinalPage(url):
     driver.quit()
     return int(final_page)
 def crawlDataFirstTime(start, end, final):
-    os.mkdir('/tmp/leveldb/batdongsan/')
+    ## Create dir leveldb for this website
+    Path("/tmp/leveldb/batdongsan").mkdir(parents=True, exist_ok=True)
+
     if(end >= final): end = final +1
-    file_path = os.getcwd() + "/" + "batdongsan.csv"
+
+    # create folder to store CSV file
+    Path(os.getcwd() + "/batdongsan").mkdir(parents=True, exist_ok=True)
+    file_path = os.getcwd() + "/batdongsan/" + "batdongsan.csv"
     driver = webdriver.Chrome(executable_path=DRIVER_PATH)
     for page in range(start, end):
         driver.get(URL + '/p' + str(page))
@@ -79,13 +84,18 @@ def crawlDataFirstTime(start, end, final):
     current_time = now.strftime("%H:%M:%S")
     print("end Time =", current_time)
 def crawlBySchedule(): #crawl data after day : day-month-year
-    os.mkdir('/tmp/leveldb/batdongsan/')
+    ## Create dir leveldb for this website
+    # Path("/tmp/leveldb/batdongsan").mkdir(parents=True, exist_ok=True)
+    
     driver = webdriver.Chrome(executable_path=DRIVER_PATH)
     stop = 0 # stop while loop when stop = 1
     page = 1
     now = re.split("\s",str(datetime.datetime.now()))[0]
     now = re.split("-",now)
-    file_path = os.getcwd() + "/" + "batdongsan-" + now[0] + now[1] + now[1] + ".csv"
+
+    # Path(os.getcwd() + "/batdongsan").mkdir(parents=True, exist_ok=True)
+    file_path = os.getcwd() + "/batdongdan/" + "batdongsan-" + now[0] + now[1] + now[1] + ".csv"
+    
     iterator = 0
     while stop == 0:
         driver.get(URL + '/p' + str(page))

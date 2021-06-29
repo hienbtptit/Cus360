@@ -22,6 +22,11 @@ baseUrl = "https://batdongsan.com.vn"
 URL = "https://batdongsan.com.vn/nha-dat-ban-tp-hcm"
 #DRIVER_PATH = 'D:\\bin\\chromedriver.exe'
 DRIVER_PATH = '/usr/bin/chromedriver'
+def writeFieldNameToFile(file):
+    field_name = []
+    field_name.append({'prid': 'prid', 'title': 'title', 'des': 'des', 'phone': 'phone'})
+    df = pandas.DataFrame(field_name)
+    df.to_csv(file, mode="a", header=False, index=False, na_rep="NaN",quoting=csv.QUOTE_ALL)
 def getFinalPage(url):
     driver = webdriver.Chrome(executable_path=DRIVER_PATH)
     driver.get(URL)
@@ -32,7 +37,6 @@ def getFinalPage(url):
 def crawlDataFirstTime(start, end, final):
     ## Create dir leveldb for this website
     Path("/tmp/leveldb/batdongsan").mkdir(parents=True, exist_ok=True)
-
     if(end >= final): end = final +1
 
     # create folder to store CSV file
@@ -95,7 +99,7 @@ def crawlBySchedule(): #crawl data after day : day-month-year
 
     # Path(os.getcwd() + "/batdongsan").mkdir(parents=True, exist_ok=True)
     file_path = os.getcwd() + "/batdongdan/" + "batdongsan-" + now[0] + now[1] + now[1] + ".csv"
-    
+    writeFieldNameToFile(file_path)
     iterator = 0
     while stop == 0:
         driver.get(URL + '/p' + str(page))
@@ -166,18 +170,12 @@ print(args)
 first_time = args.get('--first-time')
 if first_time == '1':
     print("crawlDataFirstTime")
+    writeFieldNameToFile(os.getcwd() + "/batdongsan/" + "batdongsan.csv")
     final = getFinalPage(URL)
     numProcess = multiprocessing.cpu_count()  # run process
-
-    print(numProcess)
-    # print("Final page: "+str(final)+" / " + str(final/numProcess))
     ### Multiprocessing with Process
     processes = [Process(target=crawlDataFirstTime, args=(i, i + int(final / numProcess), final)) for i in
                  range(1, final, int(final / numProcess))]  # init numProcess process
-
-    # multithreading
-    # threads=[Thread(target=crawlDataFirstTime,args=(i,i+int(final/numProcess))) for i in range(1, final, int(final/numProcess))]
-
     # Run processes
     for p in processes: p.start()
     # Exit the completed processes

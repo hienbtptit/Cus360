@@ -30,9 +30,9 @@ def crawlDataFirstTime(start, end):
     baseUrl = "https://meeyland.com"#/mua-ban-nha-dat/giay-to-day-du-ban-can-ho-gia-de-cu-chi-2-05-ty-ngay-tren-quan-9-ho-chi-minh-dt-la-65-m2-1603716314861
     url = "https://meeyland.com/mua-ban-nha-dat/ho-chi-minh"
     #make folder store CSV files
-    Path(os.getcwd() + "/meeyland").mkdir(parents=True, exist_ok=True)
+    Path("/tmp/leveldb/meeyland").mkdir(parents=True, exist_ok=True)
     file_path = os.getcwd()+"/meeyland/"+"meeyland.csv"
-
+    writeFieldNameToFile(file_path)
     final = getFinalPage('https://meeyland.com/mua-ban-nha-dat/ho-chi-minh')
     if end >= final :  end = final+1
     for i  in range  (start,end):
@@ -90,7 +90,7 @@ def crawlBySchedule(): #crawl data after day : day-month-year
     now = re.split("\s",str(datetime.datetime.now()))[0]
     now = re.split("-",now)
     #make folder store CSV files
-    Path(os.getcwd() + "/meeyland").mkdir(parents=True, exist_ok=True)
+    Path("/tmp/leveldb/meeyland").mkdir(parents=True, exist_ok=True)
     file_path = os.getcwd() + "/meeyland/" + "meeyland-" + now[0] + now[1] + now[1] + ".csv"
     writeFieldNameToFile(file_path)
     iterator = 0
@@ -161,7 +161,7 @@ print(args)
 first_time = args.get('--first-time')
 if first_time == '1':
     print("crawlDataFirstTime")
-    writeFieldNameToFile(os.getcwd()+"\\"+"meeyland.csv")
+    writeFieldNameToFile(os.getcwd()+"/meeyland/"+"meeyland.csv")
     final = getFinalPage('https://meeyland.com/mua-ban-nha-dat/ho-chi-minh')
     numProcess = multiprocessing.cpu_count() * 2 - 6  # run process
     # print("Final page: "+str(final)+" / " + str(final/numProcess))

@@ -7,6 +7,7 @@ import pandas
 import re
 import datetime
 import sys
+from pathlib import Path
 sys.path.append('../')
 from CustomLibs import single_thread_leveldb
 from CustomLibs import test_leveldb
@@ -15,6 +16,11 @@ baseUrl = "https://bds123.vn"
 url = "https://bds123.vn/nha-dat-ban-ho-chi-minh.html"
 
 from bs4 import BeautifulSoup
+def writeFieldNameToFile(file):
+    field_name = []
+    field_name.append({'prid': 'prid', 'title': 'title', 'des': 'des', 'phone': 'phone', 'time': 'time'})
+    df = pandas.DataFrame(field_name)
+    df.to_csv(file, mode="a", header=False, index=False, na_rep="NaN",quoting=csv.QUOTE_ALL)
 def getFinalPage(urlPara):
     r = requests.get(urlPara)
     soup = BeautifulSoup(r.content, 'html5lib')
@@ -22,10 +28,11 @@ def getFinalPage(urlPara):
     return int(final_page)
 
 def crawlDataFirstTime(start, end):
-    if(end >= getFinalPage(url)): end = getFinalPage(url) + 1
+    Path("/tmp/leveldb/bds123").mkdir(parents=True, exist_ok=True)
+    final = getFinalPage(url)
+    if end >= final : end = final + 1
     print("run from " + str(start) + " to " + str(end))
-    file_path = os.getcwd()+"/"+"bds123.csv"
-    os.mkdir('/tmp/leveldb/bds123/')
+    file_path = os.getcwd()+"/bds123/"+"bds123.csv"
     for i in range(start, end):
         l = []
         try:
@@ -72,8 +79,8 @@ def crawlBySchedule(): #crawl data after day : day-month-year
     page = 1
     now = re.split("\s",str(datetime.datetime.now()))[0]
     now = re.split("-",now)
-
-    file_path = os.getcwd() + "/" + "bds123-" + now[0] + now[1] + now[1] + ".csv"
+    file_path = os.getcwd() + "/bds123/" + "bds123-" + now[0] + now[1] + now[1] + ".csv"
+    writeFieldNameToFile(file_path)
     os.mkdir('/tmp/leveldb/bds123/')
     print(file_path)
     iterator = 0
@@ -161,9 +168,9 @@ print(args)
 first_time = args.get('--first-time')
 if first_time == '1':
     print("crawlDataFirstTime")
+    writeFieldNameToFile(os.getcwd() + "/bds123/" + "bds123.csv")
     final = getFinalPage('https://bds123.vn/nha-dat-ban-ho-chi-minh.html')
     numProcess = multiprocessing.cpu_count() * 2 - 4  # run process
-
     print(numProcess)
     # print("Final page: "+str(final)+" / " + str(final/numProcess))
     ### Multiprocessing with Process

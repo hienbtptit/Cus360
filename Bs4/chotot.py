@@ -28,7 +28,7 @@ def crawlDataFirstTime(start, end):
     Path("/tmp/leveldb/chotot").mkdir(parents=True, exist_ok=True)
     now = datetime.datetime.now()
     current_time = now.strftime("%H:%M:%S")
-    file_path = os.getcwd()+"/"+"chotot.csv"
+    file_path = os.getcwd()+"/chotot/"+"chotot.csv"
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--incognito')
@@ -91,7 +91,7 @@ def crawlBySchedule():
     page = 1
     now = re.split("\s", str(datetime.datetime.now()))[0]
     now = re.split("-", now)
-    file_path = os.getcwd() + "/" + "chotot-" + now[0] + now[1] + now[2] + ".csv"
+    file_path = os.getcwd() + "/chotot/" + "chotot-" + now[0] + now[1] + now[2] + ".csv"
     writeFieldNameToFile(file_path)
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
@@ -158,7 +158,7 @@ args = {k: v for k, v in zip(keys, values)}
 
 first_time = args.get('--first-time')
 if first_time == '1':
-    writeFieldNameToFile(os.getcwd() + "/" + "chotot.csv")
+    writeFieldNameToFile(os.getcwd() + "/chotot/" + "chotot.csv")
     print("crawlDataFirstTime")
     final = 3889
     numProcess = multiprocessing.cpu_count()  # run process

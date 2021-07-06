@@ -38,7 +38,7 @@ def crawlDataFirstTime(start, end, final):
     driver = webdriver.Chrome(executable_path=DRIVER_PATH, options=options)
     baseUrl = "https://nhadat24h.net"
     url = "https://nhadat24h.net/nha-dat-ban-thanh-pho-ho-chi-minh"
-    file_path = os.getcwd() + "/nhadat24h" + "/nhadat24hv1.csv"
+    file_path = os.getcwd() + "/nhadat24h" + "/nhadat24h.csv"
     if end >= final :  end = final+1
     print("run from " + str(start) + " to " + str(end))
     for i in range(start, end):
@@ -113,9 +113,7 @@ def crawlBySchedule():
                 continue
             soup = BeautifulSoup(driver.page_source, 'html5lib')
             WebDriverWait(driver, 60).until(EC.visibility_of_element_located((By.XPATH, "//div[@class='dv-item']")))
-            print(url + '/page' + str(page))
             list_link = soup.find_all('div', class_ = 'dv-item')
-            print(list_link)
             count = 0
             for link in list_link:
                 d = {}
@@ -132,22 +130,19 @@ def crawlBySchedule():
                     single_thread_leveldb.insert_link(baseUrl + href)
                 soup = BeautifulSoup(r.content, 'html5lib')
                 d['prid'] = href.split('ID')[-1]
-                print("id:", d['prid'])
+                #print("id:", d['prid'])
                 d['title'] = soup.find('a', id='txtcontenttieudetin').text
-                print(d['title'])
+                ##print(d['title'])
                 d['des'] = soup.find('div', class_='dv-m-ct-dt').text
-                d['des'].replace("  ","")
                 print(d['des'])
-                phone = soup.find('div', class_='panelActionContent').findChild('a').text
-                print(phone)
+                d['phone'] = soup.find('div', class_='panelActionContent').findChild('a').text
+                print(d['phone'] )
                 if "/" in time:
-                    print(time)
                     time = time.split(',')[0]
                     time = time.split('/')
                     d['time'] = datetime.datetime(int(time[2]), int(time[1]), int(time[0]))
                     print(d['time'])
                 else:
-                    print(time)
                     d['time'] = datetime.datetime.now()
                     print(d['time'])
                 l.append(d)
@@ -173,7 +168,7 @@ first_time = args.get('--first-time')
 Path(os.getcwd() + "/nhadat24h").mkdir(parents=True, exist_ok=True)
 if first_time == '1':
     print("crawlDataFirstTime")
-    writeFieldNameToFile(os.getcwd() + "/nhadat24h" + "/nhadat24hv1.csv")
+    writeFieldNameToFile(os.getcwd() + "/nhadat24h" + "/nhadat24h.csv")
     final = getFinalPage('https://nhadat24h.net/nha-dat-ban-thanh-pho-ho-chi-minh')
     numProcess = 2 #multiprocessing.cpu_count() * 2 - 1  # run process
     print(numProcess)

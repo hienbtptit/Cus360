@@ -100,7 +100,7 @@ def crawlBySchedule(): #crawl data after day : day-month-year
     now = re.split("-",now)
 
     # Path(os.getcwd() + "/batdongsan").mkdir(parents=True, exist_ok=True)
-    file_path = os.getcwd() + "/batdongdan/" + "batdongsan-" + now[0] + now[1] + now[1] + ".csv"
+    file_path = os.getcwd() + "/batdongsan/" + "batdongsan-" + now[0] + now[1] + now[2] + ".csv"
     writeFieldNameToFile(file_path)
     iterator = 0
     while stop == 0:

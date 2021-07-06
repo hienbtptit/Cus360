@@ -127,7 +127,7 @@ def crawlBySchedule():
                     iterator = iterator + 1
                 else:
                     iterator = 0
-                    single_thread_leveldb.insert_link(baseUrl + href)
+                    single_thread_leveldb.insert_link(baseUrl + href, '/tmp/leveldb/nhadat24h/')
                 soup = BeautifulSoup(r.content, 'html5lib')
                 d['prid'] = href.split('ID')[-1]
                 #print("id:", d['prid'])

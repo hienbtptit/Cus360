@@ -166,6 +166,7 @@ args = {k: v for k, v in zip(keys, values)}
 print(args)
 
 first_time = args.get('--first-time')
+Path(os.getcwd() + "/bds123").mkdir(parents=True, exist_ok=True)
 if first_time == '1':
     print("crawlDataFirstTime")
     writeFieldNameToFile(os.getcwd() + "/bds123/" + "bds123.csv")

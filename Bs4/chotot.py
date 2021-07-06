@@ -157,6 +157,8 @@ values = sys.argv[2::2]
 args = {k: v for k, v in zip(keys, values)}
 
 first_time = args.get('--first-time')
+# create folder to store CSV file
+Path(os.getcwd() + "/chotot").mkdir(parents=True, exist_ok=True)
 if first_time == '1':
     writeFieldNameToFile(os.getcwd() + "/chotot/" + "chotot.csv")
     print("crawlDataFirstTime")

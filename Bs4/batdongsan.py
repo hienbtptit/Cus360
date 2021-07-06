@@ -31,7 +31,7 @@ def getFinalPage(url):
     driver = webdriver.Chrome(executable_path=DRIVER_PATH)
     driver.get(URL)
     driver.maximize_window()
-    final_page = driver.find_element_by_xpath("/html/body/div[1]/div[8]/div[1]/div[4]/div[21]/div/a[6]").get_attribute('pid')
+    final_page = driver.find_element_by_xpath("//a[@class='re__pagination-icon']").get_attribute('pid')
     driver.quit()
     return int(final_page)
 def crawlDataFirstTime(start, end, final):
@@ -39,14 +39,16 @@ def crawlDataFirstTime(start, end, final):
     Path("/tmp/leveldb/batdongsan").mkdir(parents=True, exist_ok=True)
     if(end >= final): end = final +1
 
-    # create folder to store CSV file
-    Path(os.getcwd() + "/batdongsan").mkdir(parents=True, exist_ok=True)
+
     file_path = os.getcwd() + "/batdongsan/" + "batdongsan.csv"
-    driver = webdriver.Chrome(executable_path=DRIVER_PATH)
+    options = webdriver.ChromeOptions()
+    prefs = {"profile.default_content_setting_values.notifications": 2}
+    options.add_argument('--headless')
+    options.add_experimental_option("prefs", prefs)
+    driver = webdriver.Chrome(executable_path=DRIVER_PATH, options=options)
     for page in range(start, end):
         driver.get(URL + '/p' + str(page))
         #print(URL + '/p' + str(page))
-        driver.maximize_window()
         wait = WebDriverWait(driver, 60)
         try:
             wait.until(EC.visibility_of_all_elements_located((By.XPATH, "//a[@class='wrap-plink']")))
@@ -168,6 +170,7 @@ args = {k: v for k, v in zip(keys, values)}
 print(args)
 
 first_time = args.get('--first-time')
+Path(os.getcwd() + "/batdongsan").mkdir(parents=True, exist_ok=True)
 if first_time == '1':
     print("crawlDataFirstTime")
     writeFieldNameToFile(os.getcwd() + "/batdongsan/" + "batdongsan.csv")

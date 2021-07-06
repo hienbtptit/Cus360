@@ -91,7 +91,7 @@ def crawlBySchedule(): #crawl data after day : day-month-year
     now = re.split("-",now)
     #make folder store CSV files
     Path("/tmp/leveldb/meeyland").mkdir(parents=True, exist_ok=True)
-    file_path = os.getcwd() + "/meeyland/" + "meeyland-" + now[0] + now[1] + now[1] + ".csv"
+    file_path = os.getcwd() + "/meeyland/" + "meeyland-" + now[0] + now[1] + now[2] + ".csv"
     writeFieldNameToFile(file_path)
     iterator = 0
     while stop == 0:
@@ -126,15 +126,15 @@ def crawlBySchedule(): #crawl data after day : day-month-year
                 single_thread_leveldb.insert_link(baseUrl + href,'/tmp/leveldb/meeyland/')
             try:
                 d['prid'] = soup.find('div', id='nav-tabContent')['data-id']
-                print("prid: "+d['prid'])
+                #print("prid: "+d['prid'])
                 d['title'] = soup.find('h1', id='nav-home').text
-                print("title: "+d['title'])
+                #print("title: "+d['title'])
                 d['des'] = soup.find('div', class_='des-detail').text
-                print("des: "+d['des'])
+                #print("des: "+d['des'])
                 d['phone'] = soup.find('div', class_='phone')['data-phone']
-                print("phone: "+d['phone'])
+                #print("phone: "+d['phone'])
                 d['time'] = soup.find('div', text=re.compile('^Ngày đăng')).text
-                print("time: "+d['time'])
+                #print("time: "+d['time'])
             except:
                 print(str(page) + ": " + href)
                 print("Get atribute value error")
@@ -159,6 +159,7 @@ args = {k: v for k, v in zip(keys, values)}
 print(args)
 
 first_time = args.get('--first-time')
+Path(os.getcwd() + "/meeyland").mkdir(parents=True, exist_ok=True)
 if first_time == '1':
     print("crawlDataFirstTime")
     writeFieldNameToFile(os.getcwd()+"/meeyland/"+"meeyland.csv")

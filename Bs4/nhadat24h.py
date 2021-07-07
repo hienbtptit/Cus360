@@ -62,14 +62,15 @@ def crawlDataFirstTime(start, end, final):
                 r = requests.get(baseUrl+href)
                 test_leveldb.insert_link(baseUrl + href, start, '/tmp/leveldb/nhadat24h/')
                 soup = BeautifulSoup(r.content, 'html5lib')
+                #print("link:",baseUrl+href)
                 d['prid'] = href.split('ID')[-1]
                 #print("id:", d['prid'])
-                d['title'] = soup.find('a', id='txtcontenttieudetin').text
+                d['title'] = soup.find('a', id='txtcontenttieudetin').text.strip()
                 #print(d['title'])
-                d['des'] = soup.find('div', class_='dv-m-ct-dt').text
+                d['des'] = soup.find('div', id='ContentPlaceHolder1_ctl00_divContent').text.strip()
                 #print(d['des'])
-                d['phone'] = soup.find('div', class_='panelActionContent').findChild('a').text
-                #print(phone)
+                d['phone'] = soup.find('div', class_='panelActionContent').findChild('a').text.strip()
+                #print(d['phone'])
                 if "/" in time:
                     #print(time)
                     time = time.split(',')[0]
@@ -79,6 +80,7 @@ def crawlDataFirstTime(start, end, final):
                 else:
                     d['time'] = datetime.datetime.now()
                 l.append(d)
+
 
         df = pandas.DataFrame(l)
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)
@@ -91,7 +93,6 @@ def crawlBySchedule():
     now = re.split("-", now)
     file_path = os.getcwd()  + "/nhadat24h" + "/nhadat24h-" + now[0] + now[1] + now[2] + ".csv"
     writeFieldNameToFile(file_path)
-    totalCount = 0
     options = webdriver.ChromeOptions()
     prefs = {"profile.default_content_setting_values.notifications": 2}
     options.add_argument('--headless')
@@ -114,7 +115,6 @@ def crawlBySchedule():
             soup = BeautifulSoup(driver.page_source, 'html5lib')
             WebDriverWait(driver, 60).until(EC.visibility_of_element_located((By.XPATH, "//div[@class='dv-item']")))
             list_link = soup.find_all('div', class_ = 'dv-item')
-            count = 0
             for link in list_link:
                 d = {}
                 href = link.findChild('a')['href']
@@ -131,29 +131,25 @@ def crawlBySchedule():
                 soup = BeautifulSoup(r.content, 'html5lib')
                 d['prid'] = href.split('ID')[-1]
                 #print("id:", d['prid'])
-                d['title'] = soup.find('a', id='txtcontenttieudetin').text
-                ##print(d['title'])
-                d['des'] = soup.find('div', class_='dv-m-ct-dt').text
-                print(d['des'])
-                d['phone'] = soup.find('div', class_='panelActionContent').findChild('a').text
-                print(d['phone'] )
+                d['title'] = soup.find('a', id='txtcontenttieudetin').text.strip()
+                #print(d['title'])
+                d['des'] = soup.find('div', class_='dv-m-ct-dt').text.strip()
+                #print(d['des'])
+                d['phone'] = soup.find('div', class_='panelActionContent').findChild('a').text.strip()
+                #print(d['phone'] )
                 if "/" in time:
                     time = time.split(',')[0]
                     time = time.split('/')
                     d['time'] = datetime.datetime(int(time[2]), int(time[1]), int(time[0]))
-                    print(d['time'])
+                    #print(d['time'])
                 else:
                     d['time'] = datetime.datetime.now()
-                    print(d['time'])
+                    #print(d['time'])
                 l.append(d)
-                count = count + 1
 
         df = pandas.DataFrame(l)
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)
-        print("Page: "+ str(page) + " Count: "+ str(count))
-        totalCount = totalCount + count
     driver.quit()
-    print("Total count: ", totalCount)
 
 keys = sys.argv[1::2]
 values = sys.argv[2::2]

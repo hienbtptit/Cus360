@@ -60,15 +60,15 @@ def crawlDataFirstTime(start, end):
             soup = BeautifulSoup(request.content, 'html5lib')
             # print(soup.prettify())
             try:
-                d['prid'] = soup.find('div', id='nav-tabContent')['data-id']
+                d['prid'] = soup.find('div', id='nav-tabContent')['data-id'].strip()
                 #print("prid: "+d['prid'])
-                d['title'] = soup.find('h1', id='nav-home').text
+                d['title'] = soup.find('h1', id='nav-home').text.strip()
                 #print("title: "+d['title'])
-                d['des'] = soup.find('div', class_='des-detail').text
+                d['des'] = soup.find('div', class_='des-detail').text.strip()
                 #print("des: "+d['des'])
-                d['phone'] = soup.find('div', class_='phone')['data-phone']
+                d['phone'] = soup.find('div', class_='phone')['data-phone'].strip()
                 #print("phone: "+d['phone'])
-                d['time'] = soup.find('div', text=re.compile('^Ngày đăng')).text
+                d['time'] = soup.find('div', text=re.compile('^Ngày đăng')).text.strip()
                 #print("time: "+d['time'])
             except:
                 print(str(i)+ ": "+href)
@@ -125,15 +125,15 @@ def crawlBySchedule(): #crawl data after day : day-month-year
                 iterator = 0
                 single_thread_leveldb.insert_link(baseUrl + href,'/tmp/leveldb/meeyland/')
             try:
-                d['prid'] = soup.find('div', id='nav-tabContent')['data-id']
+                d['prid'] = soup.find('div', id='nav-tabContent')['data-id'].strip()
                 #print("prid: "+d['prid'])
-                d['title'] = soup.find('h1', id='nav-home').text
+                d['title'] = soup.find('h1', id='nav-home').text.strip()
                 #print("title: "+d['title'])
-                d['des'] = soup.find('div', class_='des-detail').text
+                d['des'] = soup.find('div', class_='des-detail').text.strip()
                 #print("des: "+d['des'])
-                d['phone'] = soup.find('div', class_='phone')['data-phone']
+                d['phone'] = soup.find('div', class_='phone')['data-phone'].strip()
                 #print("phone: "+d['phone'])
-                d['time'] = soup.find('div', text=re.compile('^Ngày đăng')).text
+                d['time'] = soup.find('div', text=re.compile('^Ngày đăng')).text.strip()
                 #print("time: "+d['time'])
             except:
                 print(str(page) + ": " + href)

@@ -24,7 +24,7 @@ URL = "https://batdongsan.com.vn/nha-dat-ban-tp-hcm"
 DRIVER_PATH = '/usr/bin/chromedriver'
 def writeFieldNameToFile(file):
     field_name = []
-    field_name.append({'prid': 'prid', 'title': 'title', 'des': 'des', 'phone': 'phone'})
+    field_name.append({'prid': 'prid', 'title': 'title', 'des': 'des', 'phone': 'phone', 'time': 'time'})
     df = pandas.DataFrame(field_name)
     df.to_csv(file, mode="a", header=False, index=False, na_rep="NaN",quoting=csv.QUOTE_ALL)
 def getFinalPage(url):
@@ -38,12 +38,9 @@ def crawlDataFirstTime(start, end, final):
     ## Create dir leveldb for this website
     Path("/tmp/leveldb/batdongsan").mkdir(parents=True, exist_ok=True)
     if(end >= final): end = final +1
-
-
     file_path = os.getcwd() + "/batdongsan/" + "batdongsan.csv"
     options = webdriver.ChromeOptions()
     prefs = {"profile.default_content_setting_values.notifications": 2}
-    options.add_argument('--headless')
     options.add_experimental_option("prefs", prefs)
     driver = webdriver.Chrome(executable_path=DRIVER_PATH, options=options)
     for page in range(start, end):
@@ -138,6 +135,7 @@ def crawlBySchedule(): #crawl data after day : day-month-year
                 d['prid'] = wait.until(EC.visibility_of_element_located(
                     (By.XPATH, "//div[@id='product-detail-web']"))).find_element_by_xpath(
                     "//div[@id='product-detail-web']").get_attribute('prid')
+                print(d['prid'])
                 d['title'] = wait.until(EC.visibility_of_element_located(
                     (By.XPATH, "//div[@class='containerTitle']"))).find_element_by_xpath(
                     "//div[@class='containerTitle']").text
@@ -175,7 +173,7 @@ if first_time == '1':
     print("crawlDataFirstTime")
     writeFieldNameToFile(os.getcwd() + "/batdongsan/" + "batdongsan.csv")
     final = getFinalPage(URL)
-    numProcess = multiprocessing.cpu_count()  # run process
+    numProcess = 4 # run process
     ### Multiprocessing with Process
     processes = [Process(target=crawlDataFirstTime, args=(i, i + int(final / numProcess), final)) for i in
                  range(1, final, int(final / numProcess))]  # init numProcess process

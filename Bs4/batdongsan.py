@@ -17,7 +17,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from pathlib import Path
-
+from bs4 import BeautifulSoup
+from fake_useragent import UserAgent
 baseUrl = "https://batdongsan.com.vn"
 URL = "https://batdongsan.com.vn/nha-dat-ban-tp-hcm"
 #DRIVER_PATH = 'D:\\bin\\chromedriver.exe'
@@ -34,17 +35,28 @@ def getFinalPage(url):
     final_page = driver.find_element_by_xpath("//a[@class='re__pagination-icon']").get_attribute('pid')
     driver.quit()
     return int(final_page)
+def processData(dict):
+    list(dict.keys())
+    for key in dict.keys():
+        dict[key] = str(dict[key]).strip().replace('\n','.').replace(',', '.')
+    return dict
 def crawlDataFirstTime(start, end, final):
     ## Create dir leveldb for this website
     Path("/tmp/leveldb/batdongsan").mkdir(parents=True, exist_ok=True)
     if(end >= final): end = final +1
     file_path = os.getcwd() + "/batdongsan/" + "batdongsan.csv"
+    # options = webdriver.ChromeOptions()
+    # prefs = {"profile.default_content_setting_values.notifications": 2}
+    # options.add_experimental_option("prefs", prefs)
+    # driver = webdriver.Chrome(executable_path=DRIVER_PATH, options=options)
     options = webdriver.ChromeOptions()
-    prefs = {"profile.default_content_setting_values.notifications": 2}
-    options.add_experimental_option("prefs", prefs)
-    driver = webdriver.Chrome(executable_path=DRIVER_PATH, options=options)
+    options.add_argument('--ignore-certificate-errors')
+    options.add_argument('--incognito')
+    options.add_argument('--headless')
+    driver = webdriver.Chrome(executable_path=DRIVER_PATH, chrome_options=options)
     for page in range(start, end):
         driver.get(URL + '/p' + str(page))
+        soup = BeautifulSoup(driver.page_source, 'html5lib')
         #print(URL + '/p' + str(page))
         wait = WebDriverWait(driver, 60)
         try:
@@ -77,7 +89,7 @@ def crawlDataFirstTime(start, end, final):
                 continue
             dayPost = re.split("/", time)
             d['time'] = datetime.datetime(int(dayPost[2]), int(dayPost[1]), int(dayPost[0]))
-            #print("time:",d['time'])
+            d = processData(d)
             list_data.append(d)
         df = pandas.DataFrame(list_data)
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)
@@ -86,23 +98,24 @@ def crawlDataFirstTime(start, end, final):
     now = datetime.datetime.now()
     current_time = now.strftime("%H:%M:%S")
     print("end Time =", current_time)
-def crawlBySchedule(): #crawl data after day : day-month-year
+def crawlBySchedule(file_path):
     ## Create dir leveldb for this website
-    # Path("/tmp/leveldb/batdongsan").mkdir(parents=True, exist_ok=True)
-    
-    driver = webdriver.Chrome(executable_path=DRIVER_PATH)
+    Path("/tmp/leveldb/batdongsan").mkdir(parents=True, exist_ok=True)
+    options = Options()
+    ua = UserAgent()
+    userAgent = ua.random
+    options.add_argument(f'user-agent={userAgent}')
+    options.add_argument('--ignore-certificate-errors')
+    options.add_argument('--incognito')
+    options.add_argument('--headless')
+    driver = webdriver.Chrome(executable_path=DRIVER_PATH, options=options)
+
     stop = 0 # stop while loop when stop = 1
     page = 1
-    now = re.split("\s",str(datetime.datetime.now()))[0]
-    now = re.split("-",now)
 
-    # Path(os.getcwd() + "/batdongsan").mkdir(parents=True, exist_ok=True)
-    file_path = os.getcwd() + "/batdongsan/" + "batdongsan-" + now[0] + now[1] + now[2] + ".csv"
-    writeFieldNameToFile(file_path)
     iterator = 0
     while stop == 0:
         driver.get(URL + '/p' + str(page))
-        # print(URL + '/p' + str(page))
         driver.maximize_window()
         wait = WebDriverWait(driver, 60)
         try:
@@ -116,7 +129,6 @@ def crawlBySchedule(): #crawl data after day : day-month-year
         for l in list_link:
             links.append(l.get_attribute('href'))
         for post_link in links:
-            # print(post_link)
             try:
                 driver.get(post_link)
                 driver.maximize_window()
@@ -135,24 +147,20 @@ def crawlBySchedule(): #crawl data after day : day-month-year
                 d['prid'] = wait.until(EC.visibility_of_element_located(
                     (By.XPATH, "//div[@id='product-detail-web']"))).find_element_by_xpath(
                     "//div[@id='product-detail-web']").get_attribute('prid')
-                print(d['prid'])
                 d['title'] = wait.until(EC.visibility_of_element_located(
                     (By.XPATH, "//div[@class='containerTitle']"))).find_element_by_xpath(
                     "//div[@class='containerTitle']").text
                 d['des'] = wait.until(
                     EC.visibility_of_element_located((By.XPATH, "//div[@class='des-product']"))).find_element_by_xpath(
                     "//div[@class='des-product']").text
-                d['phone'] = wait.until(
-                    EC.visibility_of_element_located((By.XPATH, "//span[@class='phoneEvent']"))).find_element_by_xpath(
-                    "//span[@class='phoneEvent']").get_attribute('raw')
-                time = wait.until(EC.visibility_of_element_located((By.XPATH,
-                                                                    "//span[@class='sp1' and text()='Ngày đăng:']/following-sibling::span"))).find_element_by_xpath(
-                    "//span[@class='sp1' and text()='Ngày đăng:']/following-sibling::span").text
+                d['phone'] = driver.find_element_by_xpath("//span[@class='phoneEvent']").get_attribute('raw')
+                time = driver.find_element_by_xpath("//span[@class='sp1' and text()='Ngày đăng:']/following-sibling::span").text
             except:
                 print("Get atribute error", post_link)
                 continue
             dayPost = re.split("/", time)
             d['time'] = datetime.datetime(int(dayPost[2]), int(dayPost[1]), int(dayPost[0]))
+            d = processData(d)
             list_data.append(d)
         df = pandas.DataFrame(list_data)
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)
@@ -183,7 +191,11 @@ if first_time == '1':
     for p in processes: p.join()
 else:
     print("crawlBySchedule")
-    crawlBySchedule()
+    now = re.split("\s", str(datetime.datetime.now()))[0]
+    now = re.split("-", now)
+    file_path = os.getcwd() + "/batdongsan/" + "batdongsan-" + now[0] + now[1] + now[2] + ".csv"
+    writeFieldNameToFile(file_path)
+    crawlBySchedule(file_path)
 
 
 

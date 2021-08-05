@@ -11,6 +11,7 @@ from pathlib import Path
 sys.path.append('../')
 from CustomLibs import single_thread_leveldb
 from CustomLibs import test_leveldb
+from CustomLibs import Csv
 
 baseUrl = "https://bds123.vn"
 url = "https://bds123.vn/nha-dat-ban-ho-chi-minh.html"
@@ -26,7 +27,6 @@ def getFinalPage(urlPara):
     soup = BeautifulSoup(r.content, 'html5lib')
     final_page = re.split("=", soup.find_all('a', class_='page-link')[-1]['href'])[-1]
     return int(final_page)
-
 def crawlDataFirstTime(start, end):
     Path("/tmp/leveldb/bds123").mkdir(parents=True, exist_ok=True)
     final = getFinalPage(url)
@@ -69,7 +69,8 @@ def crawlDataFirstTime(start, end):
                 dayPost = re.split("/", dayPost)
                 timePost = re.split("\s", d['time'])[-2]
                 timePost = re.split(":", timePost)
-                d['time'] = datetime.datetime(int(dayPost[2]), int(dayPost[1]), int(dayPost[0]), int(timePost[0]),int(timePost[1]))
+                d['time'] = datetime.datetime(int(dayPost[2]), int(dayPost[1]), int(dayPost[0]))
+                d=Csv.processData(d)
                 l.append(d)
         df= pandas.DataFrame(l)
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN",quoting=csv.QUOTE_ALL)
@@ -79,7 +80,7 @@ def crawlBySchedule(): #crawl data after day : day-month-year
     page = 1
     now = re.split("\s",str(datetime.datetime.now()))[0]
     now = re.split("-",now)
-    file_path = os.getcwd() + "/bds123/" + "bds123-" + now[0] + now[1] + now[1] + ".csv"
+    file_path = os.getcwd() + "/bds123/" + "bds123-" + now[0] + now[1] + now[2] + ".csv"
     writeFieldNameToFile(file_path)
     os.mkdir('/tmp/leveldb/bds123/')
     print(file_path)
@@ -127,9 +128,8 @@ def crawlBySchedule(): #crawl data after day : day-month-year
             dayPost = re.split("/", dayPost)
             timePost = re.split("\s", d['time'])[-2]
             timePost = re.split(":", timePost)
-            d['time'] = datetime.datetime(int(dayPost[2]), int(dayPost[1]), int(dayPost[0]), int(timePost[0]), int(timePost[1]))
-            #check if timepost < date then break the loop
-
+            d['time'] = datetime.datetime(int(dayPost[2]), int(dayPost[1]), int(dayPost[0]))
+            d = Csv.processData(d)
             l.append(d)
         df = pandas.DataFrame(l)
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)

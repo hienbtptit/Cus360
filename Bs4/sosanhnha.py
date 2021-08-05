@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 sys.path.append('../')
 from CustomLibs import single_thread_leveldb
 from CustomLibs import test_leveldb
+from CustomLibs import Csv
 baseUrl='https://sosanhnha.com'
 URL='https://sosanhnha.com/search?iCit=30'
 def getFinalPage(url):
@@ -70,6 +71,7 @@ def crawlDataFirstTime(start, end):
                 #format time
                 dayPost = re.split("/", dayPost)
                 d['time'] = datetime.datetime(int(dayPost[2]), int(dayPost[1]), int(dayPost[0]))
+                d=Csv.processData(d)
                 l.append(d)
                 count = count+1
         df= pandas.DataFrame(l)
@@ -122,7 +124,6 @@ def crawlBySchedule(): #crawl data after day : day-month-year
                 d['title'] = soup.find('h1', class_='title').text
                 d['des'] = soup.find('div', class_='description').text
                 d['phone'] = re.split(":", soup.find('a', class_='user_phone')['href'])[-1]
-                #print("phone: ", d['phone'])
                 dayPost = infor.findChildren('span')[3].text
             except:
                 print("Get atribute value error")
@@ -130,11 +131,11 @@ def crawlBySchedule(): #crawl data after day : day-month-year
             # format time
             dayPost = re.split("/", dayPost)
             d['time'] = datetime.datetime(int(dayPost[2]), int(dayPost[1]), int(dayPost[0]))
+            d=Csv.processData(d)
             l.append(d)
-
         df = pandas.DataFrame(l)
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)
-
+        page = page + 1
 
 keys = sys.argv[1::2]
 values = sys.argv[2::2]

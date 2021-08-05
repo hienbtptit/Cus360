@@ -16,6 +16,7 @@ import sys
 sys.path.append('../')
 from CustomLibs import single_thread_leveldb
 from CustomLibs import test_leveldb
+from CustomLibs import Csv
 DRIVER_PATH = '/usr/bin/chromedriver'
 def getFinalPage(url):
     request = requests.get(url)
@@ -65,11 +66,11 @@ def crawlDataFirstTime(start, end, final):
                 #print("link:",baseUrl+href)
                 d['prid'] = href.split('ID')[-1]
                 #print("id:", d['prid'])
-                d['title'] = soup.find('a', id='txtcontenttieudetin').text.strip()
+                d['title'] = soup.find('a', id='txtcontenttieudetin').text
                 #print(d['title'])
-                d['des'] = soup.find('div', id='ContentPlaceHolder1_ctl00_divContent').text.strip()
+                d['des'] = soup.find('div', id='ContentPlaceHolder1_ctl00_divContent').text
                 #print(d['des'])
-                d['phone'] = soup.find('div', class_='panelActionContent').findChild('a').text.strip()
+                d['phone'] = soup.find('div', class_='panelActionContent').findChild('a').text
                 #print(d['phone'])
                 if "/" in time:
                     #print(time)
@@ -79,8 +80,8 @@ def crawlDataFirstTime(start, end, final):
                     #print(d['time'])
                 else:
                     d['time'] = datetime.datetime.now()
+                d=Csv.processData(d)
                 l.append(d)
-
 
         df = pandas.DataFrame(l)
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)
@@ -131,11 +132,11 @@ def crawlBySchedule():
                 soup = BeautifulSoup(r.content, 'html5lib')
                 d['prid'] = href.split('ID')[-1]
                 #print("id:", d['prid'])
-                d['title'] = soup.find('a', id='txtcontenttieudetin').text.strip()
+                d['title'] = soup.find('a', id='txtcontenttieudetin').text
                 #print(d['title'])
-                d['des'] = soup.find('div', class_='dv-m-ct-dt').text.strip()
+                d['des'] = soup.find('div', class_='dv-m-ct-dt').text
                 #print(d['des'])
-                d['phone'] = soup.find('div', class_='panelActionContent').findChild('a').text.strip()
+                d['phone'] = soup.find('div', class_='panelActionContent').findChild('a').text
                 #print(d['phone'] )
                 if "/" in time:
                     time = time.split(',')[0]
@@ -144,7 +145,7 @@ def crawlBySchedule():
                     #print(d['time'])
                 else:
                     d['time'] = datetime.datetime.now()
-                    #print(d['time'])
+                d=Csv.processData(d)
                 l.append(d)
 
         df = pandas.DataFrame(l)

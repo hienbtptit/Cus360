@@ -13,6 +13,7 @@ from pathlib import Path
 sys.path.append('../')
 from CustomLibs import single_thread_leveldb
 from CustomLibs import test_leveldb
+from CustomLibs import Csv
 def getFinalPage(url):
     request = requests.get(url)
     soup = BeautifulSoup(request.content, 'html5lib')
@@ -26,6 +27,7 @@ def writeFieldNameToFile(file):
     field_name.append({'prid': 'prid', 'title': 'title', 'des': 'des', 'phone': 'phone', 'time': 'time'})
     df = pandas.DataFrame(field_name)
     df.to_csv(file, mode="a", header=False, index=False, na_rep="NaN",quoting=csv.QUOTE_ALL)
+
 def crawlDataFirstTime(start, end):
     baseUrl = "https://meeyland.com"#/mua-ban-nha-dat/giay-to-day-du-ban-can-ho-gia-de-cu-chi-2-05-ty-ngay-tren-quan-9-ho-chi-minh-dt-la-65-m2-1603716314861
     url = "https://meeyland.com/mua-ban-nha-dat/ho-chi-minh"
@@ -47,7 +49,6 @@ def crawlDataFirstTime(start, end):
         for link in list_link:
             d={}
             href = link.findChild('a')['href']
-
             if(re.search(baseUrl, href)):
                 continue
             else:
@@ -60,15 +61,15 @@ def crawlDataFirstTime(start, end):
             soup = BeautifulSoup(request.content, 'html5lib')
             # print(soup.prettify())
             try:
-                d['prid'] = soup.find('div', id='nav-tabContent')['data-id'].strip()
+                d['prid'] = soup.find('div', id='nav-tabContent')['data-id']
                 #print("prid: "+d['prid'])
-                d['title'] = soup.find('h1', id='nav-home').text.strip()
+                d['title'] = soup.find('h1', id='nav-home').text
                 #print("title: "+d['title'])
-                d['des'] = soup.find('div', class_='des-detail').text.strip()
+                d['des'] = soup.find('div', class_='des-detail').text
                 #print("des: "+d['des'])
-                d['phone'] = soup.find('div', class_='phone')['data-phone'].strip()
+                d['phone'] = soup.find('div', class_='phone')['data-phone']
                 #print("phone: "+d['phone'])
-                d['time'] = soup.find('div', text=re.compile('^Ngày đăng')).text.strip()
+                d['time'] = soup.find('div', text=re.compile('^Ngày đăng')).text
                 #print("time: "+d['time'])
             except:
                 print(str(i)+ ": "+href)
@@ -77,12 +78,12 @@ def crawlDataFirstTime(start, end):
             dayPost = re.split("\s", d['time'])[-1]
             dayPost = re.split("/", dayPost)
             d['time'] = datetime.datetime(int(dayPost[2]), int(dayPost[1]), int(dayPost[0]))
-
+            d = Csv.processData(d)
             l.append(d)
         df= pandas.DataFrame(l)
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN",quoting=csv.QUOTE_ALL)
 
-def crawlBySchedule(): #crawl data after day : day-month-year
+def crawlBySchedule():
     baseUrl = "https://meeyland.com"#/mua-ban-nha-dat/giay-to-day-du-ban-can-ho-gia-de-cu-chi-2-05-ty-ngay-tren-quan-9-ho-chi-minh-dt-la-65-m2-1603716314861
     url = "https://meeyland.com/mua-ban-nha-dat/ho-chi-minh"
     stop = 0 # stop while loop when stop = 1
@@ -125,15 +126,15 @@ def crawlBySchedule(): #crawl data after day : day-month-year
                 iterator = 0
                 single_thread_leveldb.insert_link(baseUrl + href,'/tmp/leveldb/meeyland/')
             try:
-                d['prid'] = soup.find('div', id='nav-tabContent')['data-id'].strip()
+                d['prid'] = soup.find('div', id='nav-tabContent')['data-id']
                 #print("prid: "+d['prid'])
-                d['title'] = soup.find('h1', id='nav-home').text.strip()
+                d['title'] = soup.find('h1', id='nav-home').text
                 #print("title: "+d['title'])
-                d['des'] = soup.find('div', class_='des-detail').text.strip()
+                d['des'] = soup.find('div', class_='des-detail').text
                 #print("des: "+d['des'])
-                d['phone'] = soup.find('div', class_='phone')['data-phone'].strip()
+                d['phone'] = soup.find('div', class_='phone')['data-phone']
                 #print("phone: "+d['phone'])
-                d['time'] = soup.find('div', text=re.compile('^Ngày đăng')).text.strip()
+                d['time'] = soup.find('div', text=re.compile('^Ngày đăng')).text
                 #print("time: "+d['time'])
             except:
                 print(str(page) + ": " + href)
@@ -142,7 +143,7 @@ def crawlBySchedule(): #crawl data after day : day-month-year
             dayPost = re.split("\s", d['time'])[-1]
             dayPost = re.split("/", dayPost)
             d['time'] = datetime.datetime(int(dayPost[2]), int(dayPost[1]), int(dayPost[0]))
-            #check if timepost < date then break the loop
+            d = Csv.processData(d)
             l.append(d)
         df = pandas.DataFrame(l)
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)
@@ -164,7 +165,7 @@ if first_time == '1':
     print("crawlDataFirstTime")
     writeFieldNameToFile(os.getcwd()+"/meeyland/"+"meeyland.csv")
     final = getFinalPage('https://meeyland.com/mua-ban-nha-dat/ho-chi-minh')
-    numProcess = multiprocessing.cpu_count() * 2 - 6  # run process
+    numProcess = 2#multiprocessing.cpu_count() * 2 - 6  # run process
     # print("Final page: "+str(final)+" / " + str(final/numProcess))
     ### Multiprocessing with Process
     processes = [Process(target=crawlDataFirstTime, args=(i, i + int(final / numProcess))) for i in

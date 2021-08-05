@@ -13,6 +13,7 @@ import sys
 sys.path.append('../')
 from CustomLibs import single_thread_leveldb
 from CustomLibs import test_leveldb
+from CustomLibs import Csv
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -35,11 +36,6 @@ def getFinalPage(url):
     final_page = driver.find_element_by_xpath("//a[@class='re__pagination-icon']").get_attribute('pid')
     driver.quit()
     return int(final_page)
-def processData(dict):
-    list(dict.keys())
-    for key in dict.keys():
-        dict[key] = str(dict[key]).strip().replace('\n','.').replace(',', '.')
-    return dict
 def crawlDataFirstTime(start, end, final):
     ## Create dir leveldb for this website
     Path("/tmp/leveldb/batdongsan").mkdir(parents=True, exist_ok=True)
@@ -89,7 +85,7 @@ def crawlDataFirstTime(start, end, final):
                 continue
             dayPost = re.split("/", time)
             d['time'] = datetime.datetime(int(dayPost[2]), int(dayPost[1]), int(dayPost[0]))
-            d = processData(d)
+            d = Csv.processData(d)
             list_data.append(d)
         df = pandas.DataFrame(list_data)
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)
@@ -160,7 +156,7 @@ def crawlBySchedule(file_path):
                 continue
             dayPost = re.split("/", time)
             d['time'] = datetime.datetime(int(dayPost[2]), int(dayPost[1]), int(dayPost[0]))
-            d = processData(d)
+            d = Csv.processData(d)
             list_data.append(d)
         df = pandas.DataFrame(list_data)
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)
@@ -193,7 +189,7 @@ else:
     print("crawlBySchedule")
     now = re.split("\s", str(datetime.datetime.now()))[0]
     now = re.split("-", now)
-    file_path = os.getcwd() + "/batdongsan/" + "batdongsan-" + now[0] + now[1] + now[2] + ".csv"
+    file_path = os.getcwd() + "/batdongsan/" + "batdongsan-" + now[0] + now[1] + now[2] + "01.csv"
     writeFieldNameToFile(file_path)
     crawlBySchedule(file_path)
 

@@ -12,25 +12,33 @@ from pathlib import Path
 sys.path.append('../')
 from CustomLibs import single_thread_leveldb
 from CustomLibs import test_leveldb
+from CustomLibs import Csv
 baseUrl = "https://homedy.com"
 url = "https://homedy.com/ban-nha-dat-tp-ho-chi-minh"
-def writeFieldNameToFile(file):
+now = re.split("\s",str(datetime.datetime.now()))[0]
+now = re.split("-",now)
+Path(os.getcwd() + "/"+now[0] + now[1] + now[2]).mkdir(parents=True, exist_ok=True)
+PATH_FILE_LOG = os.getcwd() + "/"+now[0] + now[1] + now[2]
+
+def writeFieldNameToFile(file_path):
     field_name = []
-    field_name.append({'prid': 'prid', 'title': 'title', 'des': 'des', 'phone': 'phone'})
+    field_name.append({'prid': 'prid', 'title': 'title', 'des': 'des', 'phone': 'phone', 'time': 'time'})
     df = pandas.DataFrame(field_name)
-    df.to_csv(file, mode="a", header=False, index=False, na_rep="NaN",quoting=csv.QUOTE_ALL)
+    df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaT")
+
 def crawlDataFirstTime(start, end):
     Path("/tmp/leveldb/homedy").mkdir(parents=True, exist_ok=True)
-    file_path = os.getcwd()+"/homedy/"+"homedy.csv"
+    file_path = PATH_FILE_LOG + "/" + "homedy.csv"
     final = 200
     if end >= final:  end = final + 1
     for i in range(start, end):
-        print('start')
         l = []
         try:
             r = requests.get(url + '/p' + str(i))
-        except:
-            print("URL page error: " + url + '/page-' + str(i))
+        except Exception as err:
+            print("Page Url error: " + url + '/p' + str(i))
+            Csv.write_log(PATH_FILE_LOG, "homedy-"+datetime.datetime.now().strftime('%Y%m%d'),
+                          'homedy -' + str(err) + '-' + url + '/p' + str(i))
             continue
         soup = BeautifulSoup(r.content, 'html5lib')
         links = soup.find_all('div',class_='product-item-top')
@@ -40,40 +48,49 @@ def crawlDataFirstTime(start, end):
             href = link.findChild('a')['href']
             try:
                 r = requests.get(baseUrl + href)
-            except:
-                print("URL post error: " + url + '/page-' + str(i))
+            except Exception as err:
+                print("Post Url Error: ")
+                print(baseUrl + href)
+                Csv.write_log(PATH_FILE_LOG, "homedy-"+datetime.datetime.now().strftime('%Y%m%d'),
+                              'homedy -' + str(err) + '-' + baseUrl + href)
                 continue
             test_leveldb.insert_link(baseUrl + href, start, '/tmp/leveldb/homedy/')
             soup = BeautifulSoup(r.content, 'html5lib')
             try:
-                d['prid'] = soup.find('span', class_='code').text.strip()
-                d['title'] = soup.find('div', class_='product-detail-top-left').findChild('h1').text.strip()
-                d['des'] = soup.find('div', id='readmore').text.strip()
-                d['phone'] = soup.find('div', class_='mobile-number-des mobile-counter')['data-mobile'].strip()
-            except:
+                d['prid'] = soup.find('span', class_='code').text
+                d['title'] = soup.find('div', class_='product-detail-top-left').findChild('h1').text
+                d['des'] = soup.find('div', id='readmore').text
+                d['phone'] = soup.find('div', class_='mobile-number-des mobile-counter')['data-mobile']
+                d['time'] = datetime.datetime.now()
+            except Exception as err:
                 print(str(i) + ": " + href)
                 print("Get atribute value error")
+                Csv.write_log(PATH_FILE_LOG, "homedy-"+datetime.datetime.now().strftime('%Y%m%d'),
+                              'homedy -' + str(err) + '-' + baseUrl + href)
                 continue
+            d = Csv.processData(d)
             l.append(d)
         df = pandas.DataFrame(l)
-        df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)
-
+        df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaT")
 def crawlBySchedule():
     stop = 0 # stop while loop when stop = 1
     page = 1
     now = re.split("\s",str(datetime.datetime.now()))[0]
     now = re.split("-",now)
-    file_path = os.getcwd() + "/homedy/" + "homedy-" + now[0] + now[1] + now[2] + ".csv"
+    file_path = PATH_FILE_LOG + "/" + "homedy-" + now[0] + now[1] + now[2] + ".csv"
     writeFieldNameToFile(file_path)
+    Path("/tmp/leveldb/homedy/").mkdir(parents=True, exist_ok=True)
     iterator = 0
     while stop == 0:
         l = []
         try:
             r = requests.get(url + '/p' + str(page))
             soup = BeautifulSoup(r.content, 'html5lib')
-        except:
+        except Exception as err:
             print("Page Url Error: ")
-            print(url + '?page=' + str(page))
+            print("Page Url error: " + url + '/p' + str(page))
+            Csv.write_log(PATH_FILE_LOG, "homedy-"+datetime.datetime.now().strftime('%Y%m%d'),
+                          'homedy -' + str(err) + '-' + url + '/p' + str(page))
             continue
         list_link = soup.find_all('div',class_='product-item-top')
         for link in list_link:
@@ -81,8 +98,10 @@ def crawlBySchedule():
             href = link.findChild('a')['href']
             try:
                 request = requests.get(baseUrl + href)
-            except:
+            except Exception as err:
                 print("URL error: " + baseUrl + href)
+                Csv.write_log(PATH_FILE_LOG, "homedy-" + datetime.datetime.now().strftime('%Y%m%d'),
+                              'homedy -' + str(err) + '-' + baseUrl + href)
                 continue
             soup = BeautifulSoup(request.content, 'html5lib')
             if single_thread_leveldb.check_exist(baseUrl + href, '/tmp/leveldb/homedy/') == 1:
@@ -94,17 +113,21 @@ def crawlBySchedule():
                 iterator = 0
                 single_thread_leveldb.insert_link(baseUrl + href, '/tmp/leveldb/homedy/')
             try:
-                d['prid'] = soup.find('span', class_='code').text.strip()
-                d['title'] = soup.find('div', class_='product-detail-top-left').findChild('h1').text.strip()
-                d['des'] = soup.find('div', id='readmore').text.strip()
-                d['phone'] = soup.find('div', class_='mobile-number-des mobile-counter')['data-mobile'].strip()
+                d['prid'] = soup.find('span', class_='code').text
+                d['title'] = soup.find('div', class_='product-detail-top-left').findChild('h1').text
+                d['des'] = soup.find('div', id='readmore').text
+                d['phone'] = soup.find('div', class_='mobile-number-des mobile-counter')['data-mobile']
+                d['time'] = datetime.datetime.now()
             except:
                 print(str(page) + ": " + href)
                 print("Get atribute value error")
+                Csv.write_log(PATH_FILE_LOG, "homedy-" + datetime.datetime.now().strftime('%Y%m%d'),
+                              'homedy -' + str(err) + '-' + baseUrl + href)
                 continue
+            d = Csv.processData(d)
             l.append(d)
         df = pandas.DataFrame(l)
-        df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)
+        df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaT")
         page = page + 1
 
 

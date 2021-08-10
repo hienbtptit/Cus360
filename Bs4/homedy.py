@@ -15,10 +15,8 @@ from CustomLibs import test_leveldb
 from CustomLibs import Csv
 baseUrl = "https://homedy.com"
 url = "https://homedy.com/ban-nha-dat-tp-ho-chi-minh"
-now = re.split("\s",str(datetime.datetime.now()))[0]
-now = re.split("-",now)
-Path(os.getcwd() + "/"+now[0] + now[1] + now[2]).mkdir(parents=True, exist_ok=True)
-PATH_FILE_LOG = os.getcwd() + "/"+now[0] + now[1] + now[2]
+Path(os.getcwd() + "/"+datetime.datetime.now().strftime('%Y%m%d')).mkdir(parents=True, exist_ok=True)
+PATH_FILE_LOG = os.getcwd() + "/"+datetime.datetime.now().strftime('%Y%m%d')
 
 def writeFieldNameToFile(file_path):
     field_name = []
@@ -74,14 +72,13 @@ def crawlDataFirstTime(start, end):
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaT")
 def crawlBySchedule():
     stop = 0 # stop while loop when stop = 1
-    page = 1
-    now = re.split("\s",str(datetime.datetime.now()))[0]
-    now = re.split("-",now)
-    file_path = PATH_FILE_LOG + "/" + "homedy-" + now[0] + now[1] + now[2] + ".csv"
+    page = 0
+    file_path = PATH_FILE_LOG + "/" + "homedy-" + datetime.datetime.now().strftime('%Y%m%d') + ".csv"
     writeFieldNameToFile(file_path)
     Path("/tmp/leveldb/homedy/").mkdir(parents=True, exist_ok=True)
     iterator = 0
     while stop == 0:
+        page = page + 1
         l = []
         try:
             r = requests.get(url + '/p' + str(page))
@@ -128,16 +125,16 @@ def crawlBySchedule():
             l.append(d)
         df = pandas.DataFrame(l)
         df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaT")
-        page = page + 1
+
 
 
 keys = sys.argv[1::2]
 values = sys.argv[2::2]
 args = {k: v for k, v in zip(keys, values)}
-Path(os.getcwd() + "/homedy").mkdir(parents=True, exist_ok=True)
+
 first_time = args.get('--first-time')
 if first_time == '1':
-    writeFieldNameToFile(os.getcwd()+"/homedy/"+"homedy.csv")
+    writeFieldNameToFile(PATH_FILE_LOG + "/"+"homedy.csv")
     print("crawlDataFirstTime")
     final = 200
     numProcess = 2  # number process

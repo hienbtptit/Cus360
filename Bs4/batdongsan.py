@@ -22,13 +22,14 @@ from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 baseUrl = "https://batdongsan.com.vn"
 URL = "https://batdongsan.com.vn/nha-dat-ban-tp-hcm"
-#DRIVER_PATH = 'D:\\bin\\chromedriver.exe'
 DRIVER_PATH = '/usr/bin/chromedriver'
-def writeFieldNameToFile(file):
+Path(os.getcwd() + "/"+datetime.datetime.now().strftime('%Y%m%d')).mkdir(parents=True, exist_ok=True)
+PATH_FILE_LOG = os.getcwd() + "/"+datetime.datetime.now().strftime('%Y%m%d')
+def writeFieldNameToFile(file_path):
     field_name = []
     field_name.append({'prid': 'prid', 'title': 'title', 'des': 'des', 'phone': 'phone', 'time': 'time'})
     df = pandas.DataFrame(field_name)
-    df.to_csv(file, mode="a", header=False, index=False, na_rep="NaN",quoting=csv.QUOTE_ALL)
+    df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaT")
 def getFinalPage(url):
     driver = webdriver.Chrome(executable_path=DRIVER_PATH)
     driver.get(URL)
@@ -40,26 +41,22 @@ def crawlDataFirstTime(start, end, final):
     ## Create dir leveldb for this website
     Path("/tmp/leveldb/batdongsan").mkdir(parents=True, exist_ok=True)
     if(end >= final): end = final +1
-    file_path = os.getcwd() + "/batdongsan/" + "batdongsan.csv"
-    # options = webdriver.ChromeOptions()
-    # prefs = {"profile.default_content_setting_values.notifications": 2}
-    # options.add_experimental_option("prefs", prefs)
-    # driver = webdriver.Chrome(executable_path=DRIVER_PATH, options=options)
+    file_path = PATH_FILE_LOG + "/" + "batdongsan.csv"
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--incognito')
-    options.add_argument('--headless')
+    #options.add_argument('--headless')
     driver = webdriver.Chrome(executable_path=DRIVER_PATH, chrome_options=options)
     for page in range(start, end):
         driver.get(URL + '/p' + str(page))
-        soup = BeautifulSoup(driver.page_source, 'html5lib')
-        #print(URL + '/p' + str(page))
         wait = WebDriverWait(driver, 60)
         try:
             wait.until(EC.visibility_of_all_elements_located((By.XPATH, "//a[@class='wrap-plink']")))
             list_link = driver.find_elements_by_xpath("//a[@class='wrap-plink']")
-        except:
+        except Exception as err:
             print("Page link error or time out")
+            Csv.write_log(PATH_FILE_LOG, "batdongsan-" + datetime.datetime.now().strftime('%Y%m%d'),
+                          'batdongsan -' + str(err) + '-' + URL + '/p' + str(page))
             continue
         links = []
         list_data = []
@@ -71,7 +68,9 @@ def crawlDataFirstTime(start, end, final):
                 driver.get(post_link)
                 driver.maximize_window()
                 test_leveldb.insert_link(post_link, start,'/tmp/leveldb/batdongsan/')
-            except:
+            except Exception as err:
+                Csv.write_log(PATH_FILE_LOG, "batdongsan-" + datetime.datetime.now().strftime('%Y%m%d'),
+                              'batdongsan -' + str(err) + '-' + post_link)
                 continue
             try:
                 d = {}
@@ -80,23 +79,23 @@ def crawlDataFirstTime(start, end, final):
                 d['des'] =  wait.until(EC.visibility_of_element_located((By.XPATH, "//div[@class='des-product']"))).find_element_by_xpath("//div[@class='des-product']").text
                 d['phone'] =  wait.until(EC.visibility_of_element_located((By.XPATH, "//span[@class='phoneEvent']"))).find_element_by_xpath("//span[@class='phoneEvent']").get_attribute('raw')
                 time=  wait.until(EC.visibility_of_element_located((By.XPATH, "//span[@class='sp1' and text()='Ngày đăng:']/following-sibling::span"))).find_element_by_xpath("//span[@class='sp1' and text()='Ngày đăng:']/following-sibling::span").text
-            except:
+            except Exception as err:
                 print("Get atribute error", post_link)
+                Csv.write_log(PATH_FILE_LOG, "batdongsan-" + datetime.datetime.now().strftime('%Y%m%d'),
+                              'batdongsan -' + str(err) + '-' + post_link)
                 continue
             dayPost = re.split("/", time)
             d['time'] = datetime.datetime(int(dayPost[2]), int(dayPost[1]), int(dayPost[0]))
             d = Csv.processData(d)
             list_data.append(d)
         df = pandas.DataFrame(list_data)
-        df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)
-
+        df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaT")
     driver.quit()
-    now = datetime.datetime.now()
-    current_time = now.strftime("%H:%M:%S")
-    print("end Time =", current_time)
-def crawlBySchedule(file_path):
+def crawlBySchedule():
     ## Create dir leveldb for this website
     Path("/tmp/leveldb/batdongsan").mkdir(parents=True, exist_ok=True)
+    file_path = PATH_FILE_LOG + "/" + "batdongsan-" + datetime.datetime.now().strftime('%Y%m%d') + ".csv"
+    writeFieldNameToFile(file_path)
     options = Options()
     ua = UserAgent()
     userAgent = ua.random
@@ -107,18 +106,20 @@ def crawlBySchedule(file_path):
     driver = webdriver.Chrome(executable_path=DRIVER_PATH, options=options)
 
     stop = 0 # stop while loop when stop = 1
-    page = 1
-
+    page = 0
     iterator = 0
     while stop == 0:
+        page = page + 1
         driver.get(URL + '/p' + str(page))
         driver.maximize_window()
         wait = WebDriverWait(driver, 60)
         try:
             wait.until(EC.visibility_of_all_elements_located((By.XPATH, "//a[@class='wrap-plink']")))
             list_link = driver.find_elements_by_xpath("//a[@class='wrap-plink']")
-        except:
+        except Exception as err:
             print("Page link error or time out")
+            Csv.write_log(PATH_FILE_LOG, "batdongsan-" + datetime.datetime.now().strftime('%Y%m%d'),
+                          'batdongsan -' + str(err) + '-' + URL + '/p' + str(page))
             continue
         links = []
         list_data = []
@@ -151,16 +152,17 @@ def crawlBySchedule(file_path):
                     "//div[@class='des-product']").text
                 d['phone'] = driver.find_element_by_xpath("//span[@class='phoneEvent']").get_attribute('raw')
                 time = driver.find_element_by_xpath("//span[@class='sp1' and text()='Ngày đăng:']/following-sibling::span").text
-            except:
+            except Exception as err:
                 print("Get atribute error", post_link)
+                Csv.write_log(PATH_FILE_LOG, "batdongsan-" + datetime.datetime.now().strftime('%Y%m%d'),
+                              'batdongsan -' + str(err) + '-' + post_link)
                 continue
             dayPost = re.split("/", time)
             d['time'] = datetime.datetime(int(dayPost[2]), int(dayPost[1]), int(dayPost[0]))
             d = Csv.processData(d)
             list_data.append(d)
         df = pandas.DataFrame(list_data)
-        df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)
-        page = page + 1
+        df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaT")
 
 keys = sys.argv[1::2]
 values = sys.argv[2::2]
@@ -172,12 +174,12 @@ args = {k: v for k, v in zip(keys, values)}
 print(args)
 
 first_time = args.get('--first-time')
-Path(os.getcwd() + "/batdongsan").mkdir(parents=True, exist_ok=True)
+
 if first_time == '1':
     print("crawlDataFirstTime")
-    writeFieldNameToFile(os.getcwd() + "/batdongsan/" + "batdongsan.csv")
+    writeFieldNameToFile(PATH_FILE_LOG + "/"+"batdongsan.csv")
     final = getFinalPage(URL)
-    numProcess = 4 # run process
+    numProcess = 2 # run process
     ### Multiprocessing with Process
     processes = [Process(target=crawlDataFirstTime, args=(i, i + int(final / numProcess), final)) for i in
                  range(1, final, int(final / numProcess))]  # init numProcess process
@@ -187,11 +189,7 @@ if first_time == '1':
     for p in processes: p.join()
 else:
     print("crawlBySchedule")
-    now = re.split("\s", str(datetime.datetime.now()))[0]
-    now = re.split("-", now)
-    file_path = os.getcwd() + "/batdongsan/" + "batdongsan-" + now[0] + now[1] + now[2] + "01.csv"
-    writeFieldNameToFile(file_path)
-    crawlBySchedule(file_path)
+    crawlBySchedule()
 
 
 

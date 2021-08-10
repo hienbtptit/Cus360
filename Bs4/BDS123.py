@@ -16,12 +16,15 @@ from CustomLibs import Csv
 baseUrl = "https://bds123.vn"
 url = "https://bds123.vn/nha-dat-ban-ho-chi-minh.html"
 
+Path(os.getcwd() + "/"+datetime.datetime.now().strftime('%Y%m%d')).mkdir(parents=True, exist_ok=True)
+PATH_FILE_LOG = os.getcwd() + "/"+datetime.datetime.now().strftime('%Y%m%d')
+
 from bs4 import BeautifulSoup
-def writeFieldNameToFile(file):
+def writeFieldNameToFile(file_path):
     field_name = []
     field_name.append({'prid': 'prid', 'title': 'title', 'des': 'des', 'phone': 'phone', 'time': 'time'})
     df = pandas.DataFrame(field_name)
-    df.to_csv(file, mode="a", header=False, index=False, na_rep="NaN",quoting=csv.QUOTE_ALL)
+    df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaT")
 def getFinalPage(urlPara):
     r = requests.get(urlPara)
     soup = BeautifulSoup(r.content, 'html5lib')
@@ -31,16 +34,18 @@ def crawlDataFirstTime(start, end):
     Path("/tmp/leveldb/bds123").mkdir(parents=True, exist_ok=True)
     final = getFinalPage(url)
     if end >= final : end = final + 1
-    print("run from " + str(start) + " to " + str(end))
-    file_path = os.getcwd()+"/bds123/"+"bds123.csv"
+
+    file_path = PATH_FILE_LOG+"/"+"bds123.csv"
     for i in range(start, end):
         l = []
         try:
             r = requests.get(url+'?created=desc&page='+str(i))
             soup = BeautifulSoup(r.content, 'html5lib')
-        except:
+        except Exception as err:
             print("Page Url Error: ")
             print(url + '?page=' + str(i))
+            Csv.write_log(PATH_FILE_LOG, datetime.now().strftime('%Y%m%d'),
+                          'BDS123 -' + str(err) + '-' + url + '?page=' + str(i))
             continue
         list_link = soup.find_all('a', class_='link')
         for  link in  list_link:
@@ -49,9 +54,10 @@ def crawlDataFirstTime(start, end):
                 test_leveldb.insert_link(baseUrl + href, start,'/tmp/leveldb/bds123/')
                 try:
                     request = requests.get(baseUrl + href)
-                except:
+                except Exception as err:
                     print("Post Url Error: ")
                     print(baseUrl + href)
+                    Csv.write_log(PATH_FILE_LOG, datetime.now().strftime('%Y%m%d'), 'BDS123 -' + str(err) + '-' +baseUrl + href)
                     continue
                 try:
                     soup = BeautifulSoup(request.content, 'html5lib')
@@ -61,8 +67,11 @@ def crawlDataFirstTime(start, end):
                     d['phone'] = soup.find('button', class_='author-phone').text
                     time = soup.find('div', class_='item published')
                     d['time'] = time.findChild('span')['title']
-                except:
+                except Exception as err:
                     print("Get atribute value error")
+                    Csv.write_log(PATH_FILE_LOG, datetime.now().strftime('%Y%m%d'),
+                                  'BDS123 -' + str(err) + '-' + baseUrl + href)
+
                     continue
                 #format time
                 dayPost = re.split("\s", d['time'])[-1]
@@ -73,26 +82,26 @@ def crawlDataFirstTime(start, end):
                 d=Csv.processData(d)
                 l.append(d)
         df= pandas.DataFrame(l)
-        df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN",quoting=csv.QUOTE_ALL)
+        df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaT")
 
 def crawlBySchedule(): #crawl data after day : day-month-year
     stop = 0 # stop while loop when 4 url is duplicate
     page = 1
-    now = re.split("\s",str(datetime.datetime.now()))[0]
-    now = re.split("-",now)
-    file_path = os.getcwd() + "/bds123/" + "bds123-" + now[0] + now[1] + now[2] + ".csv"
+    file_path = PATH_FILE_LOG + "/" + "bds123-" + datetime.datetime.now().strftime('%Y%m%d') + ".csv"
     writeFieldNameToFile(file_path)
-    os.mkdir('/tmp/leveldb/bds123/')
-    print(file_path)
+    Path("/tmp/leveldb/bds123/").mkdir(parents=True, exist_ok=True)
+    # os.mkdir('/tmp/leveldb/bds123/')
     iterator = 0
     while stop == 0:
         l = []
         try:
             r = requests.get(url + '?created=desc&page=' + str(page))
             soup = BeautifulSoup(r.content, 'html5lib')
-        except:
+        except Exception as err:
             print("Page Url Error: ")
             print(url + '?page=' + str(page))
+            Csv.write_log(PATH_FILE_LOG, datetime.now().strftime('%Y%m%d'),
+                          'BDS123 -' + str(err) + '-' + url + '?page=' + str(page))
             continue
         list_link = soup.find_all('a', class_='link')
         for link in list_link:
@@ -109,9 +118,11 @@ def crawlBySchedule(): #crawl data after day : day-month-year
 
             try:
                 request = requests.get(baseUrl + href)
-            except:
+            except Exception as err:
                 print("Post Url Error: ")
                 print(baseUrl + href)
+                Csv.write_log(PATH_FILE_LOG, datetime.now().strftime('%Y%m%d'),
+                              'BDS123 -' + str(err) + '-' + baseUrl + href)
                 continue
             try:
                 soup = BeautifulSoup(request.content, 'html5lib')
@@ -121,18 +132,21 @@ def crawlBySchedule(): #crawl data after day : day-month-year
                 d['phone'] = soup.find('button', class_='author-phone').text
                 time = soup.find('div', class_='item published')
                 d['time'] = time.findChild('span')['title']
-            except:
+            except Exception as err:
                 print("Get atribute value error")
+                Csv.write_log(PATH_FILE_LOG, datetime.now().strftime('%Y%m%d'),
+                              'BDS123 -' + str(err) + '-' + baseUrl + href)
+
                 continue
             dayPost = re.split("\s",d['time'])[-1]
             dayPost = re.split("/", dayPost)
-            timePost = re.split("\s", d['time'])[-2]
-            timePost = re.split(":", timePost)
+            # timePost = re.split("\s", d['time'])[-2]
+            # timePost = re.split(":", timePost)
             d['time'] = datetime.datetime(int(dayPost[2]), int(dayPost[1]), int(dayPost[0]))
             d = Csv.processData(d)
             l.append(d)
         df = pandas.DataFrame(l)
-        df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaN", quoting=csv.QUOTE_ALL)
+        df.to_csv(file_path, mode="a", header=False, index=False, na_rep="NaT")
         page = page + 1
 
 
@@ -166,12 +180,12 @@ args = {k: v for k, v in zip(keys, values)}
 print(args)
 
 first_time = args.get('--first-time')
-Path(os.getcwd() + "/bds123").mkdir(parents=True, exist_ok=True)
+
 if first_time == '1':
     print("crawlDataFirstTime")
-    writeFieldNameToFile(os.getcwd() + "/bds123/" + "bds123.csv")
+    writeFieldNameToFile(PATH_FILE_LOG+"/"+"bds123.csv")
     final = getFinalPage('https://bds123.vn/nha-dat-ban-ho-chi-minh.html')
-    numProcess = multiprocessing.cpu_count() * 2 - 4  # run process
+    numProcess = 1 #multiprocessing.cpu_count() * 2 - 4  # run process
     print(numProcess)
     # print("Final page: "+str(final)+" / " + str(final/numProcess))
     ### Multiprocessing with Process

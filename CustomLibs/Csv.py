@@ -1,6 +1,6 @@
 import csv
-import xlsxwriter
 import pandas
+import logging
 def read_csv_file(file_name):
     data = []
     with open(file_name,  "rt", encoding="utf8") as csvfile:
@@ -73,4 +73,21 @@ def write_to_csv_using_pandas(file_name, text1, text2, text3, text4, text5):
     df= pandas.DataFrame(data)
     df.to_csv(file_name, mode="a", header=False, index=False, na_rep="NaN",quoting=csv.QUOTE_ALL)
 
+def processData(dict):
+    list(dict.keys())
+    for key in dict.keys():
+        dict[key] = str(dict[key]).strip().replace('\n','.').replace(',', '.')
+        if str(key) == 'phone' :
+            dict[key] = str(dict[key]).replace('.','').replace(',', '').replace(' ', '').replace('(', '').replace(')', '').replace('+', '')
+            if str(dict[key]).startswith('84'): dict[key] = '0'+ str(dict[key] )[2:]
+    return dict
 
+def write_log(PATH_FILE_LOG , time, msg):
+        path_file_log = PATH_FILE_LOG + '/' + time +'.log'
+        print("Log file: ",path_file_log)
+        logging.basicConfig(filename=path_file_log,
+                            filemode='a',
+                            format='%(asctime)s %(name)s %(levelname)s %(message)s',
+                            datefmt='%d/%m/%Y %I:%M:%S %p',
+                            level=logging.DEBUG)
+        logging.info(msg)
